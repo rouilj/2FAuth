@@ -24,13 +24,16 @@
             </vue-footer>
         </div>
         <!-- Group selector -->
-        <div class="container groups with-heading" v-if="showGroupSelector">
-            <div class="columns is-centered">
+        <div class="container group-selector" v-if="showGroupSelector">
+            <div class="columns is-centered is-multiline">
+                <div class="column is-full has-text-centered">
+                    {{ $t('groups.move_selected_to') }}
+                </div>
                 <div class="column is-one-third-tablet is-one-quarter-desktop is-one-quarter-widescreen is-one-quarter-fullhd">
                     <div class="columns is-multiline">
                         <div class="column is-full" v-for="group in groups" :key="group.id">
                             <button class="button is-fullwidth is-dark has-text-light is-outlined" :class="{ 'is-link' : moveAccountsTo === group.id}" @click="moveAccountsTo = group.id">
-                                <span v-if="group.id === 0">
+                                <span v-if="group.id === 0" class="is-italic">
                                     {{ $t('groups.no_group') }}
                                 </span>
                                 <span v-else>
@@ -274,12 +277,20 @@
 
         },
 
-        props: ['InitialEditMode'],
+        props: ['initialEditMode', 'toRefresh'],
 
         mounted() {
 
-            this.fetchAccounts()
-            this.fetchGroups()
+            if( this.toRefresh || this.$route.params.isFirstLoad ) {
+                this.fetchAccounts()
+                this.fetchGroups()
+            } else {
+                const accounts = this.$storage.get('accounts', null) // use null as fallback if localstorage is empty
+                !accounts ? this.fetchAccounts() : this.accounts = accounts
+
+                const groups = this.$storage.get('groups', null) // use null as fallback if localstorage is empty
+                !groups ? this.fetchGroups() : this.groups = groups
+            }
 
             // stop OTP generation on modal close
             this.$on('modalClose', function() {
@@ -330,6 +341,8 @@
                             group_id : data.group_id,
                         })
                     })
+
+                    this.$storage.set('accounts', this.accounts)
                     
                     // No account yet, we force user to land on the start view.
                     if( this.accounts.length === 0 ) {
@@ -365,18 +378,6 @@
             saveOrder() {
                 this.drag = false
                 this.axios.patch('/api/twofaccounts/reorder', {orderedIds: this.accounts.map(a => a.id)})
-            },
-
-            /**
-             * Delete the provided account
-             */
-            deleteAccount(id) {
-                if(confirm(this.$t('twofaccounts.confirm.delete'))) {
-                    this.axios.delete('/api/twofaccounts/' + id)
-
-                    // Remove the deleted account from the collection
-                    this.accounts = this.accounts.filter(a => a.id !== id)
-                }
             },
 
             /**
@@ -431,6 +432,8 @@
                             count: data.twofaccounts_count
                         })
                     })
+
+                    this.$storage.set('groups', this.groups)
                 })
             },
 

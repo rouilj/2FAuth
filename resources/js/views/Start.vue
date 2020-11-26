@@ -3,7 +3,7 @@
     <div class="container has-text-centered">
         <div class="columns quick-uploader">
             <!-- trailer phrase that invite to add an account -->
-            <div class="column is-full quick-uploader-header" :class="{ 'is-invisible' : accountCount > 0 }">
+            <div class="column is-full quick-uploader-header" :class="{ 'is-invisible' : accountCount !== 0 }">
                 {{ $t('twofaccounts.no_account_here') }}<br>
                 {{ $t('twofaccounts.add_first_account') }}
             </div>
@@ -65,6 +65,7 @@
      *
      */
 
+    import Form from './../components/Form'
 
     export default {
         name: 'Start',
@@ -72,6 +73,7 @@
         data(){
             return {
                 accountCount: null,
+                form: new Form(),
             }
         },
 

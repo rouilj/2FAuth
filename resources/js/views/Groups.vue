@@ -1,28 +1,39 @@
 <template>
     <div class="columns is-centered">
-        <div class="form-column column is-two-thirds-tablet is-half-desktop is-one-third-widescreen is-one-quarter-fullhd">
+        <div class="form-column column is-two-thirds-tablet is-half-desktop is-one-third-widescreen is-one-third-fullhd">
             <h1 class="title">
                 {{ $t('groups.groups') }}
             </h1>
-            <p class="is-size-7-mobile">
+            <div class="is-size-7-mobile">
                 {{ $t('groups.manage_groups_legend')}}
-            </p>
-            <router-link class="is-link" :to="{ name: 'createGroup' }">
-                <font-awesome-icon :icon="['fas', 'plus-circle']" /> Create new group
-            </router-link>
-            <div v-for="group in groups" :key="group.id" class="group-item has-text-light is-size-5 is-size-6-mobile">
-                {{ group.name }}
-                <a class="has-text-grey is-pulled-right" @click="deleteGroup(group.id)">
-                    <font-awesome-icon :icon="['fas', 'trash']" />
-                </a>
-                <router-link :to="{ name: 'editGroup', params: { groupId: group.id }}" class="tag is-dark">
-                    {{ $t('commons.rename') }}
-                </router-link>
-                <span class="is-family-primary is-size-6 is-size-7-mobile has-text-grey">{{ group.count }} {{ $t('twofaccounts.accounts') }}</span>
             </div>
-            <p class="is-size-7 is-pulled-right" v-if="groups.length > 0">
-                {{ $t('groups.deleting_group_does_not_delete_accounts')}}
-            </p>
+            <div class="mt-3 mb-6">
+                <router-link class="is-link mt-5" :to="{ name: 'createGroup' }">
+                    <font-awesome-icon :icon="['fas', 'plus-circle']" /> Create new group
+                </router-link>
+            </div>
+            <div v-if="groups.length > 0">
+                <div v-for="group in groups" :key="group.id" class="group-item has-text-light is-size-5 is-size-6-mobile">
+                    {{ group.name }}
+                    <!-- delete icon -->
+                    <a class="has-text-grey is-pulled-right" @click="deleteGroup(group.id)">
+                        <font-awesome-icon :icon="['fas', 'trash']" />
+                    </a>
+                    <!-- edit link -->
+                    <router-link :to="{ name: 'editGroup', params: { id: group.id, name: group.name }}" class="tag is-dark">
+                        {{ $t('commons.rename') }}
+                    </router-link>
+                    <span class="is-family-primary is-size-6 is-size-7-mobile has-text-grey">{{ group.count }} {{ $t('twofaccounts.accounts') }}</span>
+                </div>
+                <div class="mt-2 is-size-7 is-pulled-right" v-if="groups.length > 0">
+                    {{ $t('groups.deleting_group_does_not_delete_accounts')}}
+                </div>
+            </div>
+            <div v-else class="has-text-centered">
+                <span class="is-size-4">
+                    <font-awesome-icon :icon="['fas', 'spinner']" spin />
+                </span>
+            </div>
             <!-- footer -->
             <vue-footer :showButtons="true">
                 <!-- close button -->
@@ -44,7 +55,10 @@
         },
 
         mounted() {
-
+            // Load groups for localstorage at first to avoid latency
+            const groups = this.$storage.get('groups', null) // use null as fallback if localstorage is empty
+            
+            if( groups ) this.groups = groups
             this.fetchGroups()
         },
 
@@ -53,13 +67,17 @@
             async fetchGroups() {
 
                 await this.axios.get('api/groups').then(response => {
+                    const groups = []
+
                     response.data.forEach((data) => {
-                        this.groups.push({
+                        groups.push({
                             id : data.id,
                             name : data.name,
                             count: data.twofaccounts_count
                         })
                     })
+
+                    this.groups = groups
                 })
 
                 // Remove the pseudo 'All' group
@@ -76,6 +94,13 @@
             }
 
         },
+
+        beforeRouteLeave(to, from, next) {
+            // Refresh localstorage
+            this.$storage.set('groups', this.groups)
+
+            next()
+        }
 
     }
 </script>
