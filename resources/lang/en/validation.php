@@ -14,6 +14,7 @@ return [
     */
 
     'accepted' => 'The :attribute must be accepted.',
+    'accepted_if' => 'The :attribute must be accepted when :other is :value.',
     'active_url' => 'The :attribute is not a valid URL.',
     'after' => 'The :attribute must be a date after :date.',
     'after_or_equal' => 'The :attribute must be a date after or equal to :date.',
@@ -31,9 +32,12 @@ return [
     ],
     'boolean' => 'The :attribute field must be true or false.',
     'confirmed' => 'The :attribute confirmation does not match.',
+    'current_password' => 'The password is incorrect.',
     'date' => 'The :attribute is not a valid date.',
     'date_equals' => 'The :attribute must be a date equal to :date.',
     'date_format' => 'The :attribute does not match the format :format.',
+    'declined' => 'The :attribute must be declined.',
+    'declined_if' => 'The :attribute must be declined when :other is :value.',
     'different' => 'The :attribute and :other must be different.',
     'digits' => 'The :attribute must be :digits digits.',
     'digits_between' => 'The :attribute must be between :min and :max digits.',
@@ -90,11 +94,16 @@ return [
         'string' => 'The :attribute must be at least :min characters.',
         'array' => 'The :attribute must have at least :min items.',
     ],
+    'multiple_of' => 'The :attribute must be a multiple of :value.',
     'not_in' => 'The selected :attribute is invalid.',
     'not_regex' => 'The :attribute format is invalid.',
     'numeric' => 'The :attribute must be a number.',
     'password' => 'The password is incorrect.',
     'present' => 'The :attribute field must be present.',
+    'prohibited' => 'The :attribute field is prohibited.',
+    'prohibited_if' => 'The :attribute field is prohibited when :other is :value.',
+    'prohibited_unless' => 'The :attribute field is prohibited unless :other is in :values.',
+    'prohibits' => 'The :attribute field prohibits :other from being present.',
     'regex' => 'The :attribute format is invalid.',
     'required' => 'The :attribute field is required.',
     'required_if' => 'The :attribute field is required when :other is :value.',
@@ -118,6 +127,8 @@ return [
     'url' => 'The :attribute must be a valid url.',
     'uuid' => 'The :attribute must be a valid UUID.',
 
+    'single' => 'When using :attribute it must be the only parameter in this request body',
+
     /*
     |--------------------------------------------------------------------------
     | Custom Validation Language Lines
@@ -131,27 +142,38 @@ return [
 
     'custom' => [
         'icon' => [
-            'image' => 'Supported format are jpeg, png, bmp, gif, svg, or webp',
+            'image' => 'Supported format are jpeg, png, bmp, gif, svg, or webp.',
         ],
         'qrcode' => [
-            'image' => 'Supported format are jpeg, png, bmp, gif, svg, or webp',
+            'image' => 'Supported format are jpeg, png, bmp, gif, svg, or webp.',
         ],
         'uri' => [
-            'starts_with' => 'Only valid OTP uri are supported',
+            'regex' => 'The :attribute is not a valid otpauth uri.',
+        ],
+        'otp_type' => [
+            'in' => 'The :attribute is not supported.',
         ],
         'email' => [
-            'exists' => 'No account found using this email',
-        ],
-        'otpType' => [
-            'required_without' => 'The :attribute field is required.',
+            'exists' => 'No account found using this email.',
         ],
         'secret' => [
-            'required_without' => 'The :attribute field is required.',
+            'isBase32Encoded' => 'The :attribute must be a base32 encoded string.',
         ],
         'account' => [
-            'required_without' => 'The :attribute field is required.',
-            'regex' => 'The :attribute field must not contain colon.',
+            'regex' => 'The :attribute must not contain colon.',
         ],
+        'service' => [
+            'regex' => 'The :attribute must not contain colon.',
+        ],
+        'label' => [
+            'required' => 'The uri must have a label.',
+        ],
+        'ids' => [
+            'regex' => 'IDs must be comma separated, without trailing comma.',
+        ],
+        'name' => [
+            'firstUser' => 'There is already a registered user',
+        ]
     ],
 
     /*

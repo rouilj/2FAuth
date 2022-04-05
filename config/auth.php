@@ -14,8 +14,23 @@ return [
     */
 
     'defaults' => [
-        'guard' => 'web',
+        'guard' => env('AUTHENTICATION_GUARD', 'web-guard'),
         'passwords' => 'users',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Proxy Headers
+    |--------------------------------------------------------------------------
+    |
+    | When using a reverse proxy for authentication this option controls the
+    | default name of the headers sent by the proxy.
+    |
+    */
+
+    'auth_proxy_headers' => [
+        'user' => env('AUTH_PROXY_HEADER_FOR_USER', 'REMOTE_USER'),
+        'email' => env('AUTH_PROXY_HEADER_FOR_EMAIL', null),
     ],
 
     /*
@@ -36,15 +51,20 @@ return [
     */
 
     'guards' => [
-        'web' => [
+        'web-guard' => [
             'driver' => 'session',
             'provider' => 'users',
         ],
 
-        'api' => [
+        'api-guard' => [
             'driver' => 'passport',
             'provider' => 'users',
             'hash' => false,
+        ],
+
+        'reverse-proxy-guard' => [
+            'driver'   => 'reverse-proxy',
+            'provider' => 'remote-user',
         ],
     ],
 
@@ -67,14 +87,13 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
-            'model' => App\User::class,
+            'driver' => 'eloquent-2fauth',
+            'model' => App\Models\User::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'remote-user' => [
+            'driver' => 'remote-user',
+            'model'  => App\Models\User::class,
+        ],
     ],
 
     /*
@@ -97,7 +116,29 @@ return [
             'provider' => 'users',
             'table' => 'password_resets',
             'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        // for WebAuthn
+        'webauthn' => [
+            'provider' => 'users', // The user provider using WebAuthn.
+            'table' => 'web_authn_recoveries', // The table to store the recoveries.
+            'expire' => 60,
+            'throttle' => 60,
         ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password Confirmation Timeout
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define the amount of seconds before a password confirmation
+    | times out and the user is prompted to re-enter their password via the
+    | confirmation screen. By default, the timeout lasts for three hours.
+    |
+    */
+
+    'password_timeout' => 10800,
 
 ];

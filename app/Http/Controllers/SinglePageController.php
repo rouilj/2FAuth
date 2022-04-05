@@ -2,11 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Classes\Options;
-use Illuminate\Http\Request;
+use App\Services\SettingService;
+use Illuminate\Support\Facades\App;
 
 class SinglePageController extends Controller
 {
+
+    /**
+     * The Settings Service instance.
+     */
+    protected SettingService $settingService;
+
+
+    /**
+     * Create a new controller instance.
+     * 
+     */
+    public function __construct(SettingService $settingService)
+    {
+        $this->settingService = $settingService;
+    }
+
 
     /**
      * return the main view
@@ -14,6 +30,10 @@ class SinglePageController extends Controller
      */
     public function index()
     {
-        return view('landing')->with('appSettings', Options::get()->toJson());
+        return view('landing')->with([
+            'appSettings' => $this->settingService->all()->toJson(),
+            'lang' => App::currentLocale(),
+            'locales' => collect(config("2fauth.locales"))->toJson(),
+        ]);
     }
 }

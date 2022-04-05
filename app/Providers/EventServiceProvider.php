@@ -18,6 +18,12 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+        'App\Events\TwoFAccountDeleted' => [
+            'App\Listeners\CleanIconStorage',
+        ],
+        'App\Events\GroupDeleting' => [
+            'App\Listeners\DissociateTwofaccountFromGroup',
+        ],
     ];
 
     /**
@@ -27,8 +33,6 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        parent::boot();
-
         //
     }
 }

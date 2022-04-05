@@ -39,7 +39,7 @@ class ResetDemo extends Command
      */
     public function handle()
     {
-        if( !config('app.options.isDemoApp') ) {
+        if( !config('2fauth.config.isDemoApp') ) {
             $this->comment('2fauth:reset-demo can only run when isDemoApp option is On');
             return;
         }
@@ -74,10 +74,16 @@ class ResetDemo extends Command
             $this->line('Icons regenerated');
             
             // Reset the db
-            DB::table('users')->truncate();
-            DB::table('oauth_access_tokens')->truncate();
-            DB::table('twofaccounts')->truncate();
-            DB::table('options')->truncate();
+            DB::table('users')->delete();
+            DB::table('password_resets')->delete();
+            DB::table('oauth_access_tokens')->delete();
+            DB::table('oauth_personal_access_clients')->delete();
+            DB::table('oauth_refresh_tokens')->delete();
+            DB::table('web_authn_credentials')->delete();
+            DB::table('web_authn_recoveries')->delete();
+            DB::table('twofaccounts')->delete();
+            DB::table('options')->delete();
+            DB::table('groups')->delete();
             
             // Seed the db
             $this->callSilent('db:seed', [
@@ -93,9 +99,6 @@ class ResetDemo extends Command
     }
 
     private static function generateIcon($serviceName, $base64icon) {
-        // $image = str_replace('data:image/png;base64,', '', $image);
-        // $image = str_replace(' ', '+', $image);
-
         Storage::put('public/icons/' . $serviceName . '.png', base64_decode($base64icon));
     }
 

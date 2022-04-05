@@ -2,7 +2,6 @@
 
 namespace App\Exceptions;
 
-use Throwable;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 
 class Handler extends ExceptionHandler
@@ -10,7 +9,7 @@ class Handler extends ExceptionHandler
     /**
      * A list of the exception types that are not reported.
      *
-     * @var array
+     * @var string[]
      */
     protected $dontReport = [
         //
@@ -19,35 +18,46 @@ class Handler extends ExceptionHandler
     /**
      * A list of the inputs that are never flashed for validation exceptions.
      *
-     * @var array
+     * @var string[]
      */
     protected $dontFlash = [
+        'current_password',
         'password',
         'password_confirmation',
     ];
 
     /**
-     * Report or log an exception.
+     * Register the exception handling callbacks for the application.
      *
-     * @param  \Throwable  $exception
      * @return void
      */
-    public function report(Throwable $exception)
+    public function register()
     {
-        parent::report($exception);
-    }
+        $this->renderable(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $exception, $request) {
+            return response()->json([
+                'message' => 'not found'], 404);
+        });
 
-    /**
-     * Render an exception into an HTTP response.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Throwable  $exception
-     * @return \Symfony\Component\HttpFoundation\Response
-     *
-     * @throws \Throwable
-     */
-    public function render($request, Throwable $exception)
-    {
-        return parent::render($request, $exception);
+        $this->renderable(function (InvalidOtpParameterException $exception, $request) {
+            return response()->json([
+                'message' => 'invalid OTP parameters',
+                'reason' => [$exception->getMessage()]
+            ], 400);
+        });
+
+        $this->renderable(function (InvalidQrCodeException $exception, $request) {
+            return response()->json([
+                'message' => 'not a valid QR code'], 400);
+        });
+
+        $this->renderable(function (InvalidSecretException $exception, $request) {
+            return response()->json([
+                'message' => 'not a valid base32 encoded secret'], 400);
+        });
+
+        $this->renderable(function (DbEncryptionException $exception, $request) {
+            return response()->json([
+                'message' => $exception->getMessage()], 400);
+        });
     }
 }

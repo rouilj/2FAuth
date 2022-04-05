@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="has-background-black-ter" lang="{{ option('lang', 'en') }}">
+<html class="has-background-black-ter" lang="{!! $lang !!}">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -24,7 +24,8 @@
     </div>
     <script type="text/javascript">
         var appSettings = {!! $appSettings !!};
-        var appVersion = '{{ config("app.version") }}';
+        var appVersion = '{{ config("2fauth.version") }}';
+        var appLocales = {!! $locales !!};
     </script>
     <script src="{{ mix('js/manifest.js') }}"></script>
     <script src="{{ mix('js/vendor.js') }}"></script>

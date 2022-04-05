@@ -15,28 +15,45 @@ return [
 
     'settings' => 'Settings',
     'account' => 'Account',
-    'password' => 'Password',
+    'oauth' => 'OAuth',
+    'webauthn' => 'WebAuthn',
+    'tokens' => 'Tokens',
     'options' => 'Options',
     'confirm' => [
 
     ],
     'general' => 'General',
     'security' => 'Security',
+    'profile' => 'Profile',
+    'change_password' => 'Change password',
+    'personal_access_tokens' => 'Personal access tokens',
+    'token_legend' => 'Personal Access Tokens allow any app to authenticate to the 2Fauth API. You should specify the access token as a Bearer token in the authorization header of consumer apps requests.',
+    'generate_new_token' => 'Generate a new token',
+    'revoke' => 'Revoke',
+    'token_revoked' => 'Token successfully revoked',
+    'revoking_a_token_is_permanent' => 'Revoking a token is permanent',
+    'confirm' => [
+        'revoke' => 'Are you sure you want to revoke this token?',
+    ],
+    'make_sure_copy_token' => 'Make sure to copy your personal access token now. You won’t be able to see it again!',
     'data_input' => 'Data input',
     'forms' => [
         'edit_settings' => 'Edit settings',
         'setting_saved' => 'Settings saved',
+        'new_token' => 'New token',
+        'some_translation_are_missing' => 'Some translations are missing using the browser preferred language?',
+        'help_translate_2fauth' => 'Help translate 2FAuth',
         'language' => [
             'label' => 'Language',
-            'help' => 'Change the language used to translate the app interface.'
+            'help' => 'Language used to translate the 2FAuth user interface. Named languages are complete, set the one of your choice to override your browser preference.'
         ],
-        'show_token_as_dot' => [
-            'label' => 'Show generated tokens as dot',
-            'help' => 'Replace generated token caracters with *** to ensure confidentiality. Do not affect the copy/paste feature.'
+        'show_otp_as_dot' => [
+            'label' => 'Show generated one-time passwords as dot',
+            'help' => 'Replace generated password caracters with *** to ensure confidentiality. Do not affect the copy/paste feature.'
         ],
-        'close_token_on_copy' => [
-            'label' => 'Close token after copy',
-            'help' => 'Automatically close the popup showing the generated token after it has been copied'
+        'close_otp_on_copy' => [
+            'label' => 'Close OTP after copy',
+            'help' => 'Automatically close the popup showing the generated password after it has been copied'
         ],
         'use_basic_qrcode_reader' => [
             'label' => 'Use basic QR code reader',
@@ -77,7 +94,7 @@ return [
             'help' => 'Save the last group filter applied and restore it on your next visit',
         ],
         'never' => 'Never',
-        'on_token_copy' => 'On security code copy',
+        'on_otp_copy' => 'On security code copy',
         '1_minutes' => 'After 1 minute',
         '5_minutes' => 'After 5 minutes',
         '10_minutes' => 'After 10 minutes',

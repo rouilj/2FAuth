@@ -79,7 +79,7 @@
 
         mounted() {
 
-            this.axios.get('api/twofaccounts/count').then(response => {
+            this.axios.get('api/v1/twofaccounts/count').then(response => {
                 this.accountCount = response.data.count
             })
         },
@@ -96,7 +96,8 @@
         methods: {
 
             /**
-             * Send the submitted QR code to the backend for decoding then push ser to the create form
+             * Upload the submitted QR code file to the backend for decoding, then route the user
+             * to the Create form with decoded URI to prefill the form
              */
             async submitQrCode() {
 
@@ -104,9 +105,9 @@
                 imgdata.append('qrcode', this.$refs.qrcodeInput.files[0]);
                 imgdata.append('inputFormat', 'fileUpload');
 
-                const { data } = await this.form.upload('/api/qrcode/decode', imgdata)
+                const { data } = await this.form.upload('/api/v1/qrcode/decode', imgdata)
 
-                this.$router.push({ name: 'createAccount', params: { decodedUri: data.uri } });
+                this.$router.push({ name: 'createAccount', params: { decodedUri: data.data } });
             },
 
             /**

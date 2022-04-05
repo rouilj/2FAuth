@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
+use App\Http\Requests\UserStoreRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 
 class RegisterController extends Controller
@@ -25,68 +23,35 @@ class RegisterController extends Controller
     */
 
     use RegistersUsers;
-    
-    /**
-     * check if a user exists
-     * @param  Request $request [description]
-     * @return json
-     */
-    public function checkUser()
-    {
-        $user = DB::table('users')->first();
 
-        return response()->json(['username' => isset($user->name) ? $user->name : null], 200);
-    }
 
     /**
      * Handle a registration request for the application.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Api\v1\Requests\UserStoreRequest  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function register(Request $request)
+    public function register(UserStoreRequest $request)
     {
-        // check if a user already exists
-        if( DB::table('users')->count() > 0 ) {
-            // return response()->json(['message' => __('errors.already_one_user_registered')], 400);
-            throw \Illuminate\Validation\ValidationException::withMessages(['taken' => __('errors.already_one_user_registered')]);
-        }
+        $validated = $request->validated();
+        event(new Registered($user = $this->create($validated)));
 
-        $this->validator($request->all())->validate();
+        $this->guard()->login($user);
+        // $this->guard()->loginUsingId($user->id);
+        // Auth::guard('admin')->attempt($credentials);
 
-        event(new Registered($user = $this->create($request->all())));
-
-        //$this->guard()->login($user);
-
-        $success['token'] = $user->createToken('MyApp')->accessToken;
-        $success['name'] = $user->name;
-
-        return response()->json(['message' => $success]);
-
-        // return $this->registered($request, $user)
-        //                 ?: redirect($this->redirectPath());
+        return response()->json([
+            'message' => 'account created',
+            'name' => $user->name,
+        ], 201);
     }
 
-    /**
-     * Get a validator for an incoming registration request.
-     *
-     * @param  array  $data
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
-    protected function validator(array $data)
-    {
-        return Validator::make($data, [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-    }
 
     /**
      * Create a new user instance after a valid registration.
      *
      * @param  array  $data
-     * @return \App\User
+     * @return \App\Models\User
      */
     protected function create(array $data)
     {

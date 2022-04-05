@@ -21,6 +21,7 @@ class ForgotPasswordController extends Controller
 
     use SendsPasswordResetEmails;
 
+
     /**
      * Validate the email for the given request.
      *
@@ -30,31 +31,5 @@ class ForgotPasswordController extends Controller
     protected function validateEmail(Request $request)
     {
         $request->validate(['email' => 'required|exists:users,email']);
-    }
-
-    /**
-     * Get the response for a successful password reset link.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @param  string  $response
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    protected function sendResetLinkResponse(Request $request, $response)
-    {
-        return ['status' => trans($response)];
-    }
-
-    /**
-     * Get the response for a failed password reset link.
-     *
-     * @param  \Illuminate\Http\Request $request
-     * @param  string  $response
-     * @return \Illuminate\Http\RedirectResponse
-     * 
-     * @codeCoverageIgnore Can't find how to test this :/
-     */
-    protected function sendResetLinkFailedResponse(Request $request, $response)
-    {
-        return response()->json(['requestFailed' => trans($response)], 400);
     }
 }

@@ -11,18 +11,26 @@ const mix = require('laravel-mix');
  |
  */
 
-mix.js('resources/js/app.js', 'public/js')
+mix
+    .js('resources/js/app.js', 'public/js')
+    .vue({ version: 2 })
     .extract([
-      'vue',
-      'axios',
-      'vue-axios',
-      'vue-i18n',
-      'vue-router',
-      'v-clipboard',
-      'vuedraggable'
+        'vue',
+        'axios',
+        'vue-axios',
+        'vue-i18n',
+        'vue-router',
+        'v-clipboard',
+        'vuedraggable'
     ])
     .sass('resources/sass/app.scss', 'public/css');
 
+// if (!mix.inProduction()) {
+//     mix.webpackConfig({
+//         devtool: 'source-map',
+//     }).sourceMaps();
+// }
+
 if (mix.inProduction()) {
-  mix.version()
+    mix.version()
 }

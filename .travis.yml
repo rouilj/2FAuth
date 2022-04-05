@@ -1,28 +1,37 @@
+dist: bionic
+
+env:
+  - XDEBUG_MODE=coverage
+
 language: php
 
 php:
-  - 7.3
   - 7.4
+  - 8.0
+
+services:
+  - mysql
+
+before_install:
+  - mysql -e 'CREATE DATABASE 2fauth_test;'
 
 before_script:
-  - cp .env.travis .env
   - travis_retry composer self-update
   - travis_retry composer install --no-interaction
+  - cp .env.travis .env
   - php artisan key:generate
-  - nvm install node
-  - npm install npm@latest -g
-  - npm install
 
 script:
-  - npm run dev
-  - vendor/bin/phpunit --coverage-clover=coverage.xml
+  - DATABASE=sqlite vendor/bin/phpunit --coverage-clover=coverage.xml
+  - php artisan config:clear
+  - DATABASE=mysql vendor/bin/phpunit -c phpunit-mysql.xml
 
 after_success:
 # Submit coverage report to https://codecov.io
-- bash <(curl -s https://codecov.io/bash)
+# - bash <(curl -s https://codecov.io/bash)
 
 # Monitor only these branches
 branches:
   only:
-  - master
+  # - master
   - dev
