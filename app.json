@@ -1,0 +1,75 @@
+{
+    "name": "2FAuth",
+    "description": "A Web app to manage your Two-Factor Authentication (2FA) accounts and generate their security codes",
+    "keywords": [
+      "2fauth",
+      "2fa",
+      "2factor",
+      "Two-factor",
+      "Two-factor-authentication",
+      "otp",
+      "totp",
+      "hotp"
+    ],
+    "website": "https://docs.2fauth.app",
+    "repository": "https://github.com/Bubka/2FAuth",
+    "success_url": "/register",
+    "scripts": {
+      "postdeploy": "php artisan passport:install;php artisan storage:link"
+    },
+    "env": {
+        "APP_KEY": {
+            "generator": "secret"
+        },
+        "APP_NAME": "2FAuth",
+        "APP_ENV": "review",
+        "APP_DEBUG": "false",
+        "LOG_CHANNEL": "stderr",
+        "DB_CONNECTION": "pgsql",
+        "TRUSTED_PROXIES": "*",
+        "PASSPORT_PRIVATE_KEY": {
+            "description": "The RSA private key used to generate OAUTH security token",
+            "value": ""
+        },
+        "PASSPORT_PUBLIC_KEY": {
+            "description": "The public key derivated from your private key",
+            "value": ""
+        },
+        "MAIL_HOST": {
+          "value": "",
+          "required": false
+        },
+        "MAIL_PORT": {
+          "value": "",
+          "required": false
+        },
+        "MAIL_USERNAME": {
+          "value": "",
+          "required": false
+        },
+        "MAIL_PASSWORD": {
+          "value": "",
+          "required": false
+        },
+        "MAIL_ENCRYPTION": {
+          "value": "",
+          "required": false
+        },
+        "MAIL_FROM_NAME": {
+          "value": "2FAuth",
+          "required": false
+        },
+        "MAIL_FROM_ADDRESS": {
+          "value": "no-reply@heroku.com",
+          "required": false
+        }
+    },
+    "addons": [
+        "heroku-postgresql"
+    ],
+    "buildpacks": [
+      {
+        "url": "heroku/php"
+      }
+    ]
+  }

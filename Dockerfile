@@ -17,15 +17,18 @@ ARG UID=1000
 ARG GID=1000
 COPY --from=build-composer --chown=${UID}:${GID} /usr/bin/composer /usr/bin/composer
 RUN apk add --no-cache unzip
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+RUN chmod +x /usr/local/bin/install-php-extensions && \
+    install-php-extensions gd bcmath
 WORKDIR /srv
-COPY artisan composer.json composer.lock ./
+COPY artisan composer.json ./
 COPY database ./database
 RUN composer install --prefer-dist --no-scripts --no-dev --no-autoloader
 RUN composer dump-autoload --no-scripts --no-dev --optimize
 
 FROM --platform=${BUILDPLATFORM} vendor AS test
 COPY . .
-RUN mv .env.travis .env
+RUN mv .env.testing .env
 RUN composer install
 RUN php artisan key:generate
 ENTRYPOINT [ "/srv/vendor/bin/phpunit" ]
@@ -163,21 +166,21 @@ ENV \
     # When using 'reverse-proxy-guard' 2FAuth only look for the dedicated headers and skip all other built-in
     # authentication checks. That means your proxy is fully responsible of the authentication process, 2FAuth will
     # trust him as long as headers are presents.
-    AUTHENTICATION_GUARD= \
+    AUTHENTICATION_GUARD=web-guard \
     # Name of the HTTP headers sent by the reverse proxy that identifies the authenticated user at proxy level.
     # Check your proxy documentation to find out how these headers are named (i.e 'REMOTE_USER', 'REMOTE_EMAIL', etc...)
     # (only relevant when AUTHENTICATION_GUARD is set to 'reverse-proxy-guard')
-    AUTH_PROXY_HEADER_FOR_USER= \
-    AUTH_PROXY_HEADER_FOR_EMAIL= \
+    AUTH_PROXY_HEADER_FOR_USER=null \
+    AUTH_PROXY_HEADER_FOR_EMAIL=null \
     # WebAuthn settings
     # Relying Party name, aka the name of the application. If null, defaults to APP_NAME
-    WEBAUTHN_NAME= \
+    WEBAUTHN_NAME=2FAuth \
     # Relying Party ID. If null, the device will fill it internally.
     # See https://webauthn-doc.spomky-labs.com/pre-requisites/the-relying-party#how-to-determine-the-relying-party-id
-    WEBAUTHN_ID= \
+    WEBAUTHN_ID=null \
     # Optional image data in BASE64 (128 bytes maximum) or an image url
     # See https://webauthn-doc.spomky-labs.com/pre-requisites/the-relying-party#relying-party-icon
-    WEBAUTHN_ICON= \
+    WEBAUTHN_ICON=null \
     # Use this setting to control how user verification behave during the
     # WebAuthn authentication flow.
     #
@@ -190,7 +193,12 @@ ENV \
     #   'required': Will ALWAYS ask for user verification
     #   'preferred' (default) : Will ask for user verification IF POSSIBLE
     #   'discouraged' : Will NOT ask for user verification (for example, to minimize disruption to the user interaction flow)
-    WEBAUTHN_USER_VERIFICATION= \
+    WEBAUTHN_USER_VERIFICATION=preferred \
+    # Use this setting to declare trusted proxied.
+    # Supported:
+    #   '*': to trust any proxy
+    #   A comma separated IP list: The list of proxies IP to trust
+    TRUSTED_PROXIES=null \
     # Leave the following configuration vars as is.
     # Unless you like to tinker and know what you're doing.
     BROADCAST_DRIVER=log \

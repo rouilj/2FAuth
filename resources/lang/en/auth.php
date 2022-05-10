@@ -41,7 +41,7 @@ return [
         'security_devices_legend' => 'Authentication devices you can use to sign in 2FAuth, like security keys (i.e Yubikey) or smartphones with biometric capabilities (i.e. Apple FaceId/TouchId)',
         'enhance_security_using_webauthn' => 'You can enhance the security of your 2FAuth account by enabling WebAuthn authentication.<br /><br />
             WebAuthn allows you to use trusted devices (like Yubikeys or smartphones with biometric capabilities) to sign in quickly and more securely.',
-        'use_security_device_to_sign_in' => 'Get ready to authenticate yourself using (one of) your security devices. Plug your key in, remove face mask or gloves, etc.',
+        'use_security_device_to_sign_in' => 'Get ready to authenticate using (one of) your security devices. Plug your key in, remove face mask or gloves, etc.',
         'lost_your_device' => 'Lost your device?',
         'recover_your_account' => 'Recover your account',
         'account_recovery' => 'Account recovery',
@@ -59,10 +59,11 @@ return [
         'my_device' => 'My device',
         'unknown_device' => 'Unknown device',
         'use_webauthn_only' => [
-            'label' => 'Use WebAuthn only (recommended)',
+            'label' => 'Use WebAuthn only',
             'help' => 'Make WebAuthn the only available method to sign in 2FAuth. This is the recommended setup to take advantage of the WebAuthn enhanced security.<br />
                 In case of device lost you will always be able to register a new security device to recover your account.'
         ],
+        'need_a_security_device_to_enable_options' => 'Set at least one device to enable these options',
         'use_webauthn_as_default' => [
             'label' => 'Use WebAuthn as default sign in method',
             'help' => 'Set the 2FAuth sign in form to propose the WebAuthn authentication at first. The Login/password method is then available as an alternative/fallback solution.<br />
@@ -72,6 +73,7 @@ return [
     'forms' => [
         'name' => 'Name',
         'login' => 'Login',
+        'webauthn_login' => 'WebAuthn login',
         'email' => 'Email',
         'password' => 'Password',
         'confirm_password' => 'Confirm password',
