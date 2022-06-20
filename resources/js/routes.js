@@ -8,6 +8,7 @@ import Capture          from './views/Capture'
 import Accounts         from './views/Accounts'
 import CreateAccount    from './views/twofaccounts/Create'
 import EditAccount      from './views/twofaccounts/Edit'
+import ImportAccount    from './views/twofaccounts/Import'
 import QRcodeAccount    from './views/twofaccounts/QRcode'
 import Groups           from './views/Groups'
 import CreateGroup      from './views/groups/Create'
@@ -34,6 +35,7 @@ const router = new Router({
 
         { path: '/accounts', name: 'accounts', component: Accounts, meta: { requiresAuth: true }, alias: '/', props: true },
         { path: '/account/create', name: 'createAccount', component: CreateAccount, meta: { requiresAuth: true } },
+        { path: '/account/import', name: 'importAccounts', component: ImportAccount, meta: { requiresAuth: true } },
         { path: '/account/:twofaccountId/edit', name: 'editAccount', component: EditAccount, meta: { requiresAuth: true } },
         { path: '/account/:twofaccountId/qrcode', name: 'showQRcode', component: QRcodeAccount, meta: { requiresAuth: true } },
 
@@ -48,12 +50,12 @@ const router = new Router({
         { path: '/settings/webauthn', name: 'settings.webauthn', component: SettingsWebAuthn, meta: { requiresAuth: true } },
         { path: '/settings/oauth/pat/create', name: 'settings.oauth.generatePAT', component: GeneratePAT, meta: { requiresAuth: true } },
 
-        { path: '/login', name: 'login', component: Login },
-        { path: '/register', name: 'register', component: Register },
-        { path: '/password/request', name: 'password.request', component: PasswordRequest },
-        { path: '/password/reset/:token', name: 'password.reset', component: PasswordReset },
-        { path: '/webauthn/lost', name: 'webauthn.lost', component: WebauthnLost },
-        { path: '/webauthn/recover', name: 'webauthn.recover', component: WebauthnRecover },
+        { path: '/login', name: 'login', component: Login, meta: { disabledWithAuthProxy: true } },
+        { path: '/register', name: 'register', component: Register, meta: { disabledWithAuthProxy: true } },
+        { path: '/password/request', name: 'password.request', component: PasswordRequest, meta: { disabledWithAuthProxy: true } },
+        { path: '/password/reset/:token', name: 'password.reset', component: PasswordReset, meta: { disabledWithAuthProxy: true } },
+        { path: '/webauthn/lost', name: 'webauthn.lost', component: WebauthnLost, meta: { disabledWithAuthProxy: true } },
+        { path: '/webauthn/recover', name: 'webauthn.recover', component: WebauthnRecover, meta: { disabledWithAuthProxy: true } },
         { path: '/flooded', name: 'flooded',component: Errors,props: true },
         { path: '/error', name: 'genericError',component: Errors,props: true },
         { path: '/404', name: '404',component: Errors,props: true },
@@ -63,15 +65,20 @@ const router = new Router({
 
 let isFirstLoad = true;
 
-router.beforeEach((to, from, next) => {   
+router.beforeEach((to, from, next) => {
 
     if( to.name === 'accounts') {
         to.params.isFirstLoad = isFirstLoad ? true : false
         isFirstLoad = false;
     }
 
-    next()
-
+    if (to.matched.some(record => record.meta.disabledWithAuthProxy)) {
+        if (window.appConfig.proxyAuth) {
+            next({ name: 'accounts' })
+        }
+        else next()
+    }
+    else next()
 });
 
 router.afterEach(to => {

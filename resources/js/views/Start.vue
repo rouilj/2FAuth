@@ -32,7 +32,7 @@
                     </label>
                 </div>
                 <!-- link to advanced form -->
-                <div class="block has-text-link">
+                <div v-if="showAdvancedFormButton" class="block has-text-link">
                     <router-link class="button is-link is-outlined is-rounded" :to="{ name: 'createAccount' }" >
                         {{ $t('twofaccounts.forms.use_advanced_form') }}
                     </router-link>
@@ -43,7 +43,7 @@
         <vue-footer :showButtons="true" >
             <!-- back button -->
             <p class="control" v-if="accountCount > 0">
-                <router-link class="button is-dark is-rounded" :to="{ name: 'accounts' }" >
+                <router-link class="button is-dark is-rounded" :to="{ name: returnToView }" >
                     {{ $t('commons.back') }}
                 </router-link>
             </p>
@@ -77,6 +77,17 @@
             }
         },
 
+        props: {
+            showAdvancedFormButton: {
+                type: Boolean,
+                default: true
+            },
+            returnToView: {
+                type: String,
+                default: 'accounts'
+            },
+        }, 
+
         mounted() {
 
             this.axios.get('api/v1/twofaccounts/count').then(response => {
@@ -97,7 +108,7 @@
 
             /**
              * Upload the submitted QR code file to the backend for decoding, then route the user
-             * to the Create form with decoded URI to prefill the form
+             * to the Create or Import form with decoded URI to prefill the form
              */
             async submitQrCode() {
 
@@ -107,7 +118,10 @@
 
                 const { data } = await this.form.upload('/api/v1/qrcode/decode', imgdata)
 
-                this.$router.push({ name: 'createAccount', params: { decodedUri: data.data } });
+                if( data.data.slice(0, 33).toLowerCase() === "otpauth-migration://offline?data=" ) {
+                    this.$router.push({ name: 'importAccounts', params: { migrationUri: data.data } });
+                }
+                else this.$router.push({ name: 'createAccount', params: { decodedUri: data.data } });
             },
 
             /**

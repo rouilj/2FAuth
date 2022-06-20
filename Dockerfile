@@ -55,12 +55,7 @@ RUN apk add --update --no-cache \
     # Runtime dependencies
     php7-session php7-json php7-openssl \
     # Nginx and PHP FPM to serve over HTTP
-    php7-fpm nginx \
-    && \
-    # Clean up
-    rm /etc/nginx/nginx.conf && \
-    # Fix ownership to ${UID}:${GID}
-    chown -R ${UID}:${GID} /var/lib/nginx/
+    php7-fpm nginx
 
 # PHP FPM configuration
 # Change username and ownership in php-fpm pool config
@@ -73,7 +68,11 @@ RUN mkdir /run/php && \
     chown ${UID}:${GID} /run/php /var/log/php7 && \
     chmod 700 /run/php /var/log/php7
 
-# Nginx configuration
+# NGINX
+# Clean up
+RUN rm /etc/nginx/nginx.conf && \
+    chown -R ${UID}:${GID} /var/lib/nginx
+# configuration
 EXPOSE 8000/tcp
 RUN touch /run/nginx/nginx.pid /var/lib/nginx/logs/error.log && \
     chown ${UID}:${GID} /run/nginx/nginx.pid /var/lib/nginx/logs/error.log
@@ -172,6 +171,8 @@ ENV \
     # (only relevant when AUTHENTICATION_GUARD is set to 'reverse-proxy-guard')
     AUTH_PROXY_HEADER_FOR_USER=null \
     AUTH_PROXY_HEADER_FOR_EMAIL=null \
+    # Custom logout URL to open when using an auth proxy.
+    PROXY_LOGOUT_URL=null \
     # WebAuthn settings
     # Relying Party name, aka the name of the application. If null, defaults to APP_NAME
     WEBAUTHN_NAME=2FAuth \

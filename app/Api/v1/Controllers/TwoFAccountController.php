@@ -7,6 +7,7 @@ use App\Exceptions\UndecipherableException;
 use App\Api\v1\Requests\TwoFAccountReorderRequest;
 use App\Api\v1\Requests\TwoFAccountStoreRequest;
 use App\Api\v1\Requests\TwoFAccountUpdateRequest;
+use App\Api\v1\Requests\TwoFAccountImportRequest;
 use App\Api\v1\Requests\TwoFAccountBatchRequest;
 use App\Api\v1\Requests\TwoFAccountUriRequest;
 use App\Api\v1\Requests\TwoFAccountDynamicRequest;
@@ -16,6 +17,7 @@ use App\Api\v1\Resources\TwoFAccountStoreResource;
 use App\Services\GroupService;
 use App\Services\TwoFAccountService;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
@@ -117,6 +119,21 @@ class TwoFAccountController extends Controller
                 ->response()
                 ->setStatusCode(200);
 
+    }
+
+
+    /**
+     * Dry-import Google authenticator data
+     *
+     * @param  \App\Api\v1\Requests\TwoFAccountImportRequest  $request
+     * @return \App\Api\v1\Resources\TwoFAccountCollection
+     */
+    public function import(TwoFAccountImportRequest $request)
+    { 
+        $request->merge(['withSecret' => true]);
+        $twofaccounts = $this->twofaccountService->convertMigrationFromGA($request->uri);
+
+        return new TwoFAccountCollection($twofaccounts);
     }
 
 

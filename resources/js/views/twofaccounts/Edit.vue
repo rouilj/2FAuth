@@ -33,13 +33,27 @@
                 <div class="field has-addons">
                     <p class="control">
                         <span class="select">
-                            <select v-model="form.secretIsBase32Encoded">
+                            <select @change="form.secret=''" v-model="secretIsBase32Encoded">
                                 <option v-for="format in secretFormats" :value="format.value">{{ format.text }}</option>
                             </select>
                         </span>
                     </p>
                     <p class="control is-expanded">
-                        <input class="input" type="text" v-model="form.secret">
+                        <input class="input" type="text" v-model="form.secret" :disabled="secretIsLocked">
+                    </p>
+                    <p class="control" v-if="secretIsLocked">
+                        <a class="button is-dark field-lock" @click="secretIsLocked = false" :title="$t('twofaccounts.forms.unlock.title')">
+                            <span class="icon">
+                                <font-awesome-icon :icon="['fas', 'lock']" />
+                            </span>
+                        </a>
+                    </p>
+                    <p class="control" v-else>
+                        <a class="button is-dark field-unlock"  @click="secretIsLocked = true" :title="$t('twofaccounts.forms.lock.title')">
+                            <span class="icon has-text-danger">
+                                <font-awesome-icon :icon="['fas', 'lock-open']" />
+                            </span>
+                        </a>
                     </p>
                 </div>
                 <div class="field">
@@ -110,6 +124,7 @@
     import Modal from '../../components/Modal'
     import Form from './../../components/Form'
     import OtpDisplayer from '../../components/OtpDisplayer'
+    import Base32 from "hi-base32"
 
     export default {
         data() {
@@ -118,6 +133,7 @@
                 counterIsLocked: true,
                 twofaccountExists: false,
                 tempIcon: '',
+                secretIsBase32Encoded: null,
                 form: new Form({
                     service: '',
                     account: '',
@@ -125,7 +141,6 @@
                     uri: '',
                     icon: '',
                     secret: '',
-                    secretIsBase32Encoded: null,
                     algorithm: '',
                     digits: null,
                     counter: null,
@@ -153,6 +168,7 @@
                     { text: 'sha512', value: 'sha512' },
                     { text: 'md5', value: 'md5' },
                 ],
+                secretIsLocked: true,
             }
         },
 
@@ -180,7 +196,7 @@
                 const { data } = await this.axios.get('/api/v1/twofaccounts/' + this.$route.params.twofaccountId)
 
                 this.form.fill(data)
-                this.form.secretIsBase32Encoded = 1
+                this.secretIsBase32Encoded = 1
                 this.twofaccountExists = true
 
                 // set account icon as temp icon
@@ -200,6 +216,9 @@
                     this.tempIcon = oldIcon
                     this.deleteIcon()
                 }
+
+                // Secret to base32 if necessary
+                this.form.secret = this.secretIsBase32Encoded ? this.form.secret : Base32.encode(this.form.secret).toString();
 
                 await this.form.put('/api/v1/twofaccounts/' + this.$route.params.twofaccountId)
 

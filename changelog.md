@@ -1,5 +1,46 @@
 # Change log
 
+## [3.1.1] - 2022-05-31
+
+### Fixed
+
+- [issue #85](https://github.com/Bubka/2FAuth/issues/57), [issue #86](https://github.com/Bubka/2FAuth/issues/86) Invalid OTP generated after the 2FA account has been saved to db
+
+## [3.1.0] - 2022-05-20
+
+### Added
+
+- `PROXY_LOGOUT_URL` environment variable to specify a custom logout url when using an auth proxy
+- Locked/Unlocked state for the _Secret_ field in the 2FA account Edit form to prevent undesirable edit.
+
+### Fixed
+
+- Fix OAuth setting view returning an error when auth is handled by a proxy
+- [issue #57](https://github.com/Bubka/2FAuth/issues/57) Can't save icons or upload QR codes - Docker installation
+- [issue #81](https://github.com/Bubka/2FAuth/issues/81) Unable to create configured logger. Using emergency logger
+- [issue #82](https://github.com/Bubka/2FAuth/issues/82) Autolock feature should be disabled while auth is handled by a proxy
+- [issue #84](https://github.com/Bubka/2FAuth/issues/84) Reverse-proxy-guard authenticates request without valid headers configuration
+
+## [3.0.2] - 2022-05-14
+
+### Added
+
+- Mail settings section in the docker readme by [@aronmal](https://github.com/aronmal)
+
+### Fixed
+
+- [issue #72](https://github.com/Bubka/2FAuth/issues/72) 2FA secret passed as plain text rejected by form validation
+- [issue #73](https://github.com/Bubka/2FAuth/issues/73) CSRF token mismatch
+- [issue #78](https://github.com/Bubka/2FAuth/issues/78) Add tags other then latest when pushing images to dockerhub
+
+## [3.0.1] - 2022-05-11
+
+### Fixed
+
+- [issue #68](https://github.com/Bubka/2FAuth/issues/68) 2fauth not run after update
+- [issue #71](https://github.com/Bubka/2FAuth/issues/71) Cannot view old TOTP entries on latest Docker Image
+- Missing login information on the demo website
+
 ## [3.0.0] - 2022-05-09
 
 Finally, here is version 3.0!
