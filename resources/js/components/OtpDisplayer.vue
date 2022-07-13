@@ -6,10 +6,10 @@
         <p class="is-size-4 has-text-grey-light has-ellipsis">{{ internal_service }}</p>
         <p class="is-size-6 has-text-grey has-ellipsis">{{ internal_account }}</p>
         <p class="is-size-1 has-text-white is-clickable" :title="$t('commons.copy_to_clipboard')" v-clipboard="() => internal_password.replace(/ /g, '')" v-clipboard:success="clipboardSuccessHandler">{{ displayedOtp }}</p>
-        <ul class="dots" v-show="internal_otp_type === 'totp'">
+        <ul class="dots" v-show="isTimeBased(internal_otp_type)">
             <li v-for="n in 10"></li>
         </ul>
-        <ul v-show="internal_otp_type === 'hotp'">
+        <ul v-show="isHMacBased(internal_otp_type)">
             <li>counter: {{ internal_counter }}</li>
         </ul>
     </div>
@@ -57,10 +57,13 @@
 
         computed: {
             displayedOtp() {
-                const spacePosition = Math.ceil(this.internal_password.length / 2)
-                let pwd = this.internal_password.substr(0, spacePosition) + " " + this.internal_password.substr(spacePosition)
+                let pwd = this.internal_password
+                if (this.internal_otp_type !== 'steamtotp') {
+                    const spacePosition = Math.ceil(this.internal_password.length / 2)
+                    pwd = this.internal_password.substr(0, spacePosition) + " " + this.internal_password.substr(spacePosition)
+                }
                 return this.$root.appSettings.showOtpAsDot ? pwd.replace(/[0-9]/g, '●') : pwd
-            }
+            },
         },
 
         mounted: function() {
@@ -68,6 +71,14 @@
         },
 
         methods: {
+
+            isTimeBased: function(otp_type) {
+                return (otp_type === 'totp' || otp_type === 'steamtotp')
+            },
+
+            isHMacBased: function(otp_type) {
+                return otp_type === 'hotp'
+            },
 
             async show(id) {
 
@@ -100,7 +111,7 @@
                     this.internal_icon = data.icon
                     this.internal_otp_type = data.otp_type
                     
-                    if( data.otp_type === 'hotp' && data.counter ) {
+                    if( this.isHMacBased(data.otp_type) && data.counter ) {
                         this.internal_counter = data.counter
                     }
                 }
@@ -113,16 +124,13 @@
 
                 if( this.internal_id || this.uri || this.secret ) { // minimun required vars to get an otp from the backend
                     
-                    switch(this.internal_otp_type) {
-                        case 'totp':
-                            await this.startTotpLoop()
-                            break;
-                        case 'hotp':
-                            await this.getHOTP()
-                            break;
-                        default:
-                            this.$router.push({ name: 'genericError', params: { err: this.$t('errors.not_a_supported_otp_type') } });
-                    } 
+                    if(this.isTimeBased(this.internal_otp_type)) {
+                        await this.startTotpLoop()
+                    }
+                    else if(this.isHMacBased(this.internal_otp_type)) {
+                        await this.getHOTP()
+                    }
+                    else this.$router.push({ name: 'genericError', params: { err: this.$t('errors.not_a_supported_otp_type') } });
 
                     this.$parent.isActive = true
                 }
@@ -259,7 +267,7 @@
 
 
             stopLoop: function() {
-                if( this.internal_otp_type === 'totp' ) {
+                if( this.isTimeBased(this.internal_otp_type) ) {
                     clearTimeout(this.remainingTimeout)
                     clearTimeout(this.firstDotToNextOneTimeout)
                     clearInterval(this.dotToDotInterval)

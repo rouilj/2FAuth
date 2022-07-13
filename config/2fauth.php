@@ -9,7 +9,7 @@ return [
     |
     */
 
-    'version' => '3.2.0-alpha',
+    'version' => '3.2',
 
     /*
     |--------------------------------------------------------------------------
@@ -20,6 +20,7 @@ return [
 
     'config' => [
         'isDemoApp' => env('IS_DEMO_APP', false),
+        'isTestingApp' => env('IS_TESTING_APP', false),
         'trustedProxies' => env('TRUSTED_PROXIES', null),
         'proxyLogoutUrl' => env('PROXY_LOGOUT_URL', null),
     ],
