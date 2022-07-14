@@ -15856,13 +15856,17 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
         password: ''
       }),
       isBusy: false,
-      showWebauthn: this.$root.appSettings.useWebauthnAsDefault || this.$root.appSettings.useWebauthnOnly
+      showWebauthn: this.$root.appSettings.useWebauthnAsDefault || this.$root.appSettings.useWebauthnOnly,
+      csrfRefresher: null
     };
   },
   computed: {
     punchline: function punchline() {
       return this.isDemo ? '' : this.$t('auth.welcome_back_x', [this.username]);
     }
+  },
+  mounted: function mounted() {
+    this.csrfRefresher = setInterval(this.refreshToken, 300000); // 5 min
   },
   methods: {
     /**
@@ -16005,6 +16009,9 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
           }
         }, _callee);
       }))();
+    },
+    refreshToken: function refreshToken() {
+      this.axios.get('/refresh-csrf');
     }
   },
   beforeRouteEnter: function beforeRouteEnter(to, from, next) {
@@ -16070,6 +16077,7 @@ function _asyncToGenerator(fn) { return function () { var self = this, args = ar
     this.$notify({
       clean: true
     });
+    clearInterval(this.csrfRefresher);
     next();
   }
 });
@@ -20412,7 +20420,12 @@ vue__WEBPACK_IMPORTED_MODULE_1__["default"].mixin({
               case 10:
                 _this.$storage.clear();
 
-                location.reload();
+                _this.$router.push({
+                  name: 'login',
+                  params: {
+                    forceRefresh: true
+                  }
+                });
 
               case 12:
               case "end":
