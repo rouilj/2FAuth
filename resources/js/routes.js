@@ -27,6 +27,7 @@ import SettingsWebAuthn from './views/settings/WebAuthn'
 import EditCredential   from './views/settings/Credentials/Edit'
 import GeneratePAT      from './views/settings/PATokens/Create'
 import Errors           from './views/Error'
+import About            from './views/About'
 
 const router = new Router({
     mode: 'history',
@@ -44,21 +45,22 @@ const router = new Router({
         { path: '/group/create', name: 'createGroup', component: CreateGroup, meta: { requiresAuth: true } },
         { path: '/group/:groupId/edit', name: 'editGroup', component: EditGroup, meta: { requiresAuth: true }, props: true },
 
-        { path: '/settings/options', name: 'settings.options', component: SettingsOptions, meta: { requiresAuth: true } },
-        { path: '/settings/account', name: 'settings.account', component: SettingsAccount, meta: { requiresAuth: true } },
-        { path: '/settings/oauth', name: 'settings.oauth.tokens', component: SettingsOAuth, meta: { requiresAuth: true } },
-        { path: '/settings/oauth/pat/create', name: 'settings.oauth.generatePAT', component: GeneratePAT, meta: { requiresAuth: true } },
-        { path: '/settings/webauthn/:credentialId/edit', name: 'settings.webauthn.editCredential', component: EditCredential, meta: { requiresAuth: true }, props: true },
-        { path: '/settings/webauthn', name: 'settings.webauthn.devices', component: SettingsWebAuthn, meta: { requiresAuth: true } },
+        { path: '/settings/options', name: 'settings.options', component: SettingsOptions, meta: { requiresAuth: true, showAbout: true } },
+        { path: '/settings/account', name: 'settings.account', component: SettingsAccount, meta: { requiresAuth: true, showAbout: true } },
+        { path: '/settings/oauth', name: 'settings.oauth.tokens', component: SettingsOAuth, meta: { requiresAuth: true, showAbout: true } },
+        { path: '/settings/oauth/pat/create', name: 'settings.oauth.generatePAT', component: GeneratePAT, meta: { requiresAuth: true, showAbout: true } },
+        { path: '/settings/webauthn/:credentialId/edit', name: 'settings.webauthn.editCredential', component: EditCredential, meta: { requiresAuth: true, showAbout: true }, props: true },
+        { path: '/settings/webauthn', name: 'settings.webauthn.devices', component: SettingsWebAuthn, meta: { requiresAuth: true, showAbout: true } },
 
-        { path: '/login', name: 'login', component: Login, meta: { disabledWithAuthProxy: true } },
-        { path: '/register', name: 'register', component: Register, meta: { disabledWithAuthProxy: true } },
-        { path: '/autolock', name: 'autolock',component: Autolock, meta: { disabledWithAuthProxy: true } },
-        { path: '/password/request', name: 'password.request', component: PasswordRequest, meta: { disabledWithAuthProxy: true } },
-        { path: '/password/reset/:token', name: 'password.reset', component: PasswordReset, meta: { disabledWithAuthProxy: true } },
-        { path: '/webauthn/lost', name: 'webauthn.lost', component: WebauthnLost, meta: { disabledWithAuthProxy: true } },
-        { path: '/webauthn/recover', name: 'webauthn.recover', component: WebauthnRecover, meta: { disabledWithAuthProxy: true } },
+        { path: '/login', name: 'login', component: Login, meta: { disabledWithAuthProxy: true, showAbout: true } },
+        { path: '/register', name: 'register', component: Register, meta: { disabledWithAuthProxy: true, showAbout: true } },
+        { path: '/autolock', name: 'autolock',component: Autolock, meta: { disabledWithAuthProxy: true, showAbout: true } },
+        { path: '/password/request', name: 'password.request', component: PasswordRequest, meta: { disabledWithAuthProxy: true, showAbout: true } },
+        { path: '/password/reset/:token', name: 'password.reset', component: PasswordReset, meta: { disabledWithAuthProxy: true, showAbout: true } },
+        { path: '/webauthn/lost', name: 'webauthn.lost', component: WebauthnLost, meta: { disabledWithAuthProxy: true, showAbout: true } },
+        { path: '/webauthn/recover', name: 'webauthn.recover', component: WebauthnRecover, meta: { disabledWithAuthProxy: true, showAbout: true } },
 
+        { path: '/about', name: 'about',component: About, meta: { showAbout: true } },
         { path: '/flooded', name: 'flooded',component: Errors, props: true },
         { path: '/error', name: 'genericError',component: Errors, props: true },
         { path: '/404', name: '404',component: Errors, props: true },

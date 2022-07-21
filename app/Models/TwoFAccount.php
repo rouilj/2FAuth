@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Exception;
+use App\Services\LogoService;
 use App\Models\Dto\TotpDto;
 use App\Models\Dto\HotpDto;
 use App\Events\TwoFAccountDeleted;
@@ -26,6 +27,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use ParagonIE\ConstantTime\Base32;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Http;
 
 class TwoFAccount extends Model implements Sortable
 {
@@ -317,7 +320,7 @@ class TwoFAccount extends Model implements Sortable
      */
     public function getOTP()
     {
-        Log::info(sprintf('OTP requested for TwoFAccount #%s', $this->id));
+        Log::info(sprintf('OTP requested for TwoFAccount (%s)', $this->id ? 'id:'.$this->id: 'preview'));
 
         // Early exit if the model has an undecipherable secret
         if (strtolower($this->secret) === __('errors.indecipherable')) {
@@ -349,7 +352,7 @@ class TwoFAccount extends Model implements Sortable
 
             }
 
-            Log::info(sprintf('New OTP generated for TwoFAccount #%s', $this->id));
+            Log::info(sprintf('New OTP generated for TwoFAccount (%s)', $this->id ? 'id:'.$this->id: 'preview'));
     
             return $OtpDto;
 
@@ -434,9 +437,12 @@ class TwoFAccount extends Model implements Sortable
         if ($isSteamTotp || strtolower($this->service) === 'steam') {
             $this->enforceAsSteam();
         }
-        else if ($this->generator->hasParameter('image')) {
+        if ($this->generator->hasParameter('image')) {
             $this->icon = $this->storeImageAsIcon($this->generator->getParameter('image'));
-        }        
+        }
+        if (!$this->icon) {
+            $this->icon = $this->getDefaultIcon();
+        }    
 
         Log::info(sprintf('TwoFAccount filled with an URI'));
 
@@ -453,7 +459,6 @@ class TwoFAccount extends Model implements Sortable
         $this->digits    = 5;
         $this->algorithm = self::SHA1;
         $this->period    = 30;
-        $this->icon = $this->storeImageAsIcon('https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/langfr-320px-Steam_icon_logo.svg.png');
         
         Log::info(sprintf('TwoFAccount configured as Steam account'));
     }
@@ -531,25 +536,34 @@ class TwoFAccount extends Model implements Sortable
     private function storeImageAsIcon(string $url)
     {
         try {
-            $remoteImageURL = $url;
-            $path_parts = pathinfo($remoteImageURL);
-            $newFilename = Str::random(40) . '.' . $path_parts['extension'];
+            $path_parts = pathinfo($url);
+            $newFilename = Str::random(40).'.'.$path_parts['extension'];
             $imageFile = self::IMAGELINK_STORAGE_PATH . $newFilename;
-            $iconFile = self::ICON_STORAGE_PATH . $newFilename;
 
-            Storage::disk('local')->put($imageFile, file_get_contents($remoteImageURL));
+            try {
+                $response = Http::retry(3, 100)->get($url);
+                
+                if ($response->successful()) {
+                    Storage::disk('imagesLink')->put($newFilename, $response->body());
+                }
+            }
+            catch (\Exception $exception) {
+                Log::error(sprintf('Cannot fetch imageLink at "%s"', $url));
+            }
 
             if ( in_array(Storage::mimeType($imageFile), ['image/png', 'image/jpeg', 'image/webp', 'image/bmp']) 
                 && getimagesize(storage_path() . '/app/' . $imageFile) )
             {
-                // Should be a valid image
-                Storage::move($imageFile, $iconFile);
-
+                // Should be a valid image, we move it to the icons disk
+                if (Storage::disk('icons')->put($newFilename, Storage::disk('imagesLink')->get($newFilename))) {
+                    Storage::disk('imagesLink')->delete($newFilename);
+                }
+                
                 Log::info(sprintf('Icon file %s stored', $newFilename));
             }
             else {
                 // @codeCoverageIgnoreStart
-                Storage::delete($imageFile);
+                Storage::disk('imagesLink')->delete($newFilename);
                 throw new \Exception('Unsupported mimeType or missing image on storage');
                 // @codeCoverageIgnoreEnd
             }
@@ -557,11 +571,24 @@ class TwoFAccount extends Model implements Sortable
             return $newFilename;
         }
         // @codeCoverageIgnoreStart
-        catch (\Assert\AssertionFailedException|\Assert\InvalidArgumentException|\Exception|\Throwable $ex) {
+        catch (\Exception|\Throwable $ex) {
             Log::error(sprintf('Icon storage failed: %s', $ex->getMessage()));
             return null;
         }
         // @codeCoverageIgnoreEnd
+    }
+
+
+    /**
+     * Fetch a logo in the tfa directory and store it as a new stand alone icon
+     * 
+     * @return string|null The icon
+     */
+    private function getDefaultIcon()
+    {
+        $logoService = App::make(LogoService::class);
+
+        return $logoService->getIcon($this->service);
     }
 
 
