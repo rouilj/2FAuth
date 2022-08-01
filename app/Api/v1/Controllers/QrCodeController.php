@@ -3,38 +3,13 @@
 namespace App\Api\v1\Controllers;
 
 use App\Models\TwoFAccount;
-use App\Services\QrCodeService;
-use App\Services\TwoFAccountService;
+use App\Facades\QrCode;
 use App\Api\v1\Requests\QrCodeDecodeRequest;
 use App\Http\Controllers\Controller;
 
 
 class QrCodeController extends Controller
 {
-    /**
-     * The QR code Service instance.
-     */
-    protected $qrcodeService;
-
-    /**
-     * The TwoFAccount Service instance.
-     */
-    protected $twofaccountService;
-
-
-    /**
-     * Create a new controller instance.
-     *
-     * @param \App\Services\QrCodeService  $qrcodeService
-     * @param \App\Services\TwoFAccountService $twofaccountService
-     * @return void
-     */
-    public function __construct(QrCodeService $qrcodeService, TwoFAccountService $twofaccountService)
-    {
-        $this->qrcodeService = $qrcodeService;
-        $this->twofaccountService = $twofaccountService;
-    }
-
 
     /**
      * Show a QR code image
@@ -46,7 +21,7 @@ class QrCodeController extends Controller
     {
         $uri = $twofaccount->getURI();
 
-        return response()->json(['qrcode' => $this->qrcodeService->encode($uri)], 200);
+        return response()->json(['qrcode' => QrCode::encode($uri)], 200);
     }
 
 
@@ -60,7 +35,7 @@ class QrCodeController extends Controller
     {
         $file = $request->file('qrcode');
 
-        return response()->json(['data' => $this->qrcodeService->decode($file)], 200);
+        return response()->json(['data' => QrCode::decode($file)], 200);
     }
     
 }

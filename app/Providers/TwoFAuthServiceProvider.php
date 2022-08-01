@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\LogoService;
+use App\Services\SettingService;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Contracts\Support\DeferrableProvider;
 
@@ -15,7 +16,11 @@ class TwoFAuthServiceProvider extends ServiceProvider implements DeferrableProvi
      */
     public function register()
     {
-        $this->app->singleton(LogoService::class, function ($app) {
+        $this->app->singleton(SettingService::class, function () {
+            return new SettingService();
+        });
+
+        $this->app->singleton(LogoService::class, function () {
             return new LogoService();
         });
     }
@@ -38,6 +43,8 @@ class TwoFAuthServiceProvider extends ServiceProvider implements DeferrableProvi
      */
     public function provides()
     {
-        return [LogoService::class];
+        return [
+            LogoService::class,
+        ];
     }
 }

@@ -5,8 +5,8 @@ namespace Tests\Feature\Services;
 use App\Models\Group;
 use App\Models\TwoFAccount;
 use Tests\FeatureTestCase;
-use Tests\Classes\LocalFile;
-use Illuminate\Support\Facades\DB;
+use App\Facades\Groups;
+use App\Facades\Settings;
 
 
 /**
@@ -14,18 +14,6 @@ use Illuminate\Support\Facades\DB;
  */
 class GroupServiceTest extends FeatureTestCase
 {
-    /**
-     * App\Services\QrCodeService $groupService
-     */
-    protected $groupService;
-
-
-    /**
-     * App\Services\SettingService $settingService
-     */
-    protected $settingService;
-
-
     /**
      * App\Models\Group $groupOne, $groupTwo
      */
@@ -57,9 +45,6 @@ class GroupServiceTest extends FeatureTestCase
     public function setUp() : void
     {
         parent::setUp();
-
-        $this->groupService = $this->app->make('App\Services\GroupService');
-        $this->settingService = $this->app->make('App\Services\SettingService');
 
         $this->groupOne = new Group;
         $this->groupOne->name = 'MyGroupOne';
@@ -102,7 +87,7 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_getAll_returns_a_collection()
     {
-        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, $this->groupService->getAll());
+        $this->assertInstanceOf(\Illuminate\Database\Eloquent\Collection::class, Groups::getAll());
     }
 
 
@@ -111,7 +96,7 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_getAll_adds_pseudo_group_on_top_of_user_groups()
     {
-        $groups = $this->groupService->getAll();
+        $groups = Groups::getAll();
         
         $this->assertEquals(0, $groups->first()->id);
         $this->assertEquals(__('commons.all'), $groups->first()->name);
@@ -123,7 +108,7 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_getAll_returns_pseudo_group_with_all_twofaccounts_count()
     {
-        $groups = $this->groupService->getAll();
+        $groups = Groups::getAll();
         
         $this->assertEquals(self::TWOFACCOUNT_COUNT, $groups->first()->twofaccounts_count);
     }
@@ -134,7 +119,7 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_create_persists_and_returns_created_group()
     {
-        $newGroup = $this->groupService->create(['name' => self::NEW_GROUP_NAME]);
+        $newGroup = Groups::create(['name' => self::NEW_GROUP_NAME]);
         
         $this->assertDatabaseHas('groups', ['name' => self::NEW_GROUP_NAME]);
         $this->assertInstanceOf(\App\Models\Group::class, $newGroup);
@@ -147,7 +132,7 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_update_persists_and_returns_updated_group()
     {
-        $this->groupOne = $this->groupService->update($this->groupOne, ['name' => self::NEW_GROUP_NAME]);
+        $this->groupOne = Groups::update($this->groupOne, ['name' => self::NEW_GROUP_NAME]);
         
         $this->assertDatabaseHas('groups', ['name' => self::NEW_GROUP_NAME]);
         $this->assertInstanceOf(\App\Models\Group::class, $this->groupOne);
@@ -160,7 +145,7 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_delete_a_groupId_clear_db_and_returns_deleted_count()
     {
-        $deleted = $this->groupService->delete($this->groupOne->id);
+        $deleted = Groups::delete($this->groupOne->id);
         
         $this->assertDatabaseMissing('groups', ['id' => $this->groupOne->id]);
         $this->assertEquals(1, $deleted);
@@ -172,7 +157,7 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_delete_an_array_of_ids_clear_db_and_returns_deleted_count()
     {
-        $deleted = $this->groupService->delete([$this->groupOne->id, $this->groupTwo->id]);
+        $deleted = Groups::delete([$this->groupOne->id, $this->groupTwo->id]);
         
         $this->assertDatabaseMissing('groups', ['id' => $this->groupOne->id]);
         $this->assertDatabaseMissing('groups', ['id' => $this->groupTwo->id]);
@@ -185,9 +170,9 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_delete_default_group_reset_defaultGroup_setting()
     {
-        $this->settingService->set('defaultGroup', $this->groupOne->id);
+        Settings::set('defaultGroup', $this->groupOne->id);
 
-        $deleted = $this->groupService->delete($this->groupOne->id);
+        $deleted = Groups::delete($this->groupOne->id);
         
         $this->assertDatabaseHas('options', [
             'key' => 'defaultGroup',
@@ -201,10 +186,10 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_delete_active_group_reset_activeGroup_setting()
     {
-        $this->settingService->set('rememberActiveGroup', true);
-        $this->settingService->set('activeGroup', $this->groupOne->id);
+        Settings::set('rememberActiveGroup', true);
+        Settings::set('activeGroup', $this->groupOne->id);
         
-        $deleted = $this->groupService->delete($this->groupOne->id);
+        $deleted = Groups::delete($this->groupOne->id);
         
         $this->assertDatabaseHas('options', [
             'key' => 'activeGroup',
@@ -219,7 +204,7 @@ class GroupServiceTest extends FeatureTestCase
     public function test_assign_a_twofaccountid_to_a_specified_group_persists_the_relation()
     {
         
-        $this->groupService->assign($this->twofaccountOne->id, $this->groupOne);
+        Groups::assign($this->twofaccountOne->id, $this->groupOne);
         
         $this->assertDatabaseHas('twofaccounts', [
             'id' => $this->twofaccountOne->id,
@@ -233,7 +218,7 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_assign_multiple_twofaccountid_to_a_specified_group_persists_the_relation()
     {
-        $this->groupService->assign([$this->twofaccountOne->id, $this->twofaccountTwo->id], $this->groupOne);
+        Groups::assign([$this->twofaccountOne->id, $this->twofaccountTwo->id], $this->groupOne);
         
         $this->assertDatabaseHas('twofaccounts', [
             'id' => $this->twofaccountOne->id,
@@ -251,9 +236,9 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_assign_a_twofaccountid_to_no_group_assigns_to_default_group()
     {
-        $this->settingService->set('defaultGroup', $this->groupTwo->id);
+        Settings::set('defaultGroup', $this->groupTwo->id);
         
-        $this->groupService->assign($this->twofaccountOne->id);
+        Groups::assign($this->twofaccountOne->id);
         
         $this->assertDatabaseHas('twofaccounts', [
             'id' => $this->twofaccountOne->id,
@@ -267,10 +252,10 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_assign_a_twofaccountid_to_no_group_assigns_to_active_group()
     {
-        $this->settingService->set('defaultGroup', -1);
-        $this->settingService->set('activeGroup', $this->groupTwo->id);
+        Settings::set('defaultGroup', -1);
+        Settings::set('activeGroup', $this->groupTwo->id);
         
-        $this->groupService->assign($this->twofaccountOne->id);
+        Groups::assign($this->twofaccountOne->id);
         
         $this->assertDatabaseHas('twofaccounts', [
             'id' => $this->twofaccountOne->id,
@@ -284,10 +269,10 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_assign_a_twofaccountid_to_missing_active_group_does_not_fails()
     {
-        $this->settingService->set('defaultGroup', -1);
-        $this->settingService->set('activeGroup', 100000);
+        Settings::set('defaultGroup', -1);
+        Settings::set('activeGroup', 100000);
         
-        $this->groupService->assign($this->twofaccountOne->id);
+        Groups::assign($this->twofaccountOne->id);
         
         $this->assertDatabaseHas('twofaccounts', [
             'id' => $this->twofaccountOne->id,
@@ -301,8 +286,8 @@ class GroupServiceTest extends FeatureTestCase
      */
     public function test_getAccounts_returns_accounts()
     {
-        $this->groupService->assign([$this->twofaccountOne->id, $this->twofaccountTwo->id], $this->groupOne);
-        $accounts = $this->groupService->getAccounts($this->groupOne);
+        Groups::assign([$this->twofaccountOne->id, $this->twofaccountTwo->id], $this->groupOne);
+        $accounts = Groups::getAccounts($this->groupOne);
         
         $this->assertEquals(2, $accounts->count());
     }

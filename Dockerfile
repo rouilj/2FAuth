@@ -1,8 +1,8 @@
 ARG BUILDPLATFORM=linux/amd64
 ARG TARGETPLATFORM
-ARG ALPINE_VERSION=3.14
-ARG PHP_VERSION=7.4-alpine${ALPINE_VERSION}
-ARG COMPOSER_VERSION=2.1
+ARG ALPINE_VERSION=3.16
+ARG PHP_VERSION=8.0-alpine${ALPINE_VERSION}
+ARG COMPOSER_VERSION=2.3
 ARG SUPERVISORD_VERSION=v0.7.3
 
 ARG UID=1000
@@ -21,7 +21,7 @@ ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/do
 RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions gd bcmath
 WORKDIR /srv
-COPY artisan composer.json ./
+COPY artisan composer.json composer.lock ./
 COPY database ./database
 RUN composer install --prefer-dist --no-scripts --no-dev --no-autoloader
 RUN composer dump-autoload --no-scripts --no-dev --optimize
@@ -45,28 +45,28 @@ COPY --from=supervisord --chown=${UID}:${GID} /bin /usr/local/bin/supervisord
 # Install PHP and PHP system dependencies
 RUN apk add --update --no-cache \
     # PHP
-    php7 \
+    php8 \
     # Composer dependencies
-    php7-phar \
+    php8-phar \
     # PHP SQLite driver
-    php7-pdo_sqlite php7-sqlite3 \
+    php8-pdo_sqlite php8-sqlite3 \
     # PHP extensions
-    php7-xml php7-gd php7-mbstring php7-tokenizer php7-cli php7-fileinfo php7-bcmath php7-ctype php7-dom \
+    php8-xml php8-gd php8-mbstring php8-tokenizer php8-fileinfo php8-bcmath php8-ctype php8-dom \
     # Runtime dependencies
-    php7-session php7-json php7-openssl \
+    php8-session php8-openssl \
     # Nginx and PHP FPM to serve over HTTP
-    php7-fpm nginx
+    php8-fpm nginx
 
 # PHP FPM configuration
 # Change username and ownership in php-fpm pool config
-RUN sed -i '/user = nobody/d' /etc/php7/php-fpm.d/www.conf && \
-    sed -i '/group = nobody/d' /etc/php7/php-fpm.d/www.conf && \
-    sed -i '/listen.owner/d' /etc/php7/php-fpm.d/www.conf && \
-    sed -i '/listen.group/d' /etc/php7/php-fpm.d/www.conf
+RUN sed -i '/user = nobody/d' /etc/php8/php-fpm.d/www.conf && \
+    sed -i '/group = nobody/d' /etc/php8/php-fpm.d/www.conf && \
+    sed -i '/listen.owner/d' /etc/php8/php-fpm.d/www.conf && \
+    sed -i '/listen.group/d' /etc/php8/php-fpm.d/www.conf
 # Pre-create files with the correct permissions
 RUN mkdir /run/php && \
-    chown ${UID}:${GID} /run/php /var/log/php7 && \
-    chmod 700 /run/php /var/log/php7
+    chown ${UID}:${GID} /run/php /var/log/php8 && \
+    chmod 700 /run/php /var/log/php8
 
 # NGINX
 # Clean up

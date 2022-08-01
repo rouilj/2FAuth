@@ -3,7 +3,6 @@
 namespace App\Api\v1\Controllers;
 
 use App\Models\TwoFAccount;
-use App\Exceptions\UndecipherableException;
 use App\Api\v1\Requests\TwoFAccountReorderRequest;
 use App\Api\v1\Requests\TwoFAccountStoreRequest;
 use App\Api\v1\Requests\TwoFAccountUpdateRequest;
@@ -14,39 +13,14 @@ use App\Api\v1\Requests\TwoFAccountDynamicRequest;
 use App\Api\v1\Resources\TwoFAccountCollection;
 use App\Api\v1\Resources\TwoFAccountReadResource;
 use App\Api\v1\Resources\TwoFAccountStoreResource;
-use App\Services\GroupService;
-use App\Services\TwoFAccountService;
+use App\Facades\Groups;
+use App\Facades\TwoFAccounts;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 class TwoFAccountController extends Controller
 {
-    /**
-     * The TwoFAccount Service instance.
-     */
-    protected $twofaccountService;
-
-    /**
-     * The Group Service instance.
-     */
-    protected $groupService;
-
-
-    /**
-     * Create a new controller instance.
-     *
-     * @param  \App\Services\TwoFAccountService  $twofaccountService
-     * @param  \App\Services\GroupService  $groupService
-     * @return void
-     */
-    public function __construct(TwoFAccountService $twofaccountService, GroupService $groupService)
-    {
-        $this->twofaccountService = $twofaccountService;
-        $this->groupService = $groupService;
-    }
-
 
     /**
      * List all resources
@@ -98,7 +72,7 @@ class TwoFAccountController extends Controller
         $twofaccount->save();
 
         // Possible group association
-        $this->groupService->assign($twofaccount->id);
+        Groups::assign($twofaccount->id);
 
         return (new TwoFAccountReadResource($twofaccount->refresh()))
                 ->response()
@@ -137,7 +111,7 @@ class TwoFAccountController extends Controller
     public function import(TwoFAccountImportRequest $request)
     { 
         $request->merge(['withSecret' => true]);
-        $twofaccounts = $this->twofaccountService->convertMigrationFromGA($request->uri);
+        $twofaccounts = TwoFAccounts::convertMigrationFromGA($request->uri);
 
         return new TwoFAccountCollection($twofaccounts);
     }
@@ -202,7 +176,7 @@ class TwoFAccountController extends Controller
             else {
                 $validatedData = $request->validate((new TwoFAccountUriRequest)->rules());
                 $twofaccount = new TwoFAccount;
-                $twofaccount->fillWithURI($validatedData['uri'], Arr::get($validatedData, 'custom_otp') === TwoFAccount::STEAM_TOTP);
+                $twofaccount->fillWithURI($validatedData['uri'], Arr::get($validatedData, 'custom_otp') === TwoFAccount::STEAM_TOTP, true);
             }
         }
 
@@ -210,7 +184,7 @@ class TwoFAccountController extends Controller
         else {
             $validatedData = $request->validate((new TwoFAccountStoreRequest)->rules());
             $twofaccount = new TwoFAccount();
-            $twofaccount->fillWithOtpParameters($validatedData);
+            $twofaccount->fillWithOtpParameters($validatedData, true);
         }
 
         return response()->json($twofaccount->getOTP(), 200);
@@ -247,7 +221,7 @@ class TwoFAccountController extends Controller
             ], 400);
         }
 
-        $this->twofaccountService->withdraw($validated['ids']);
+        TwoFAccounts::withdraw($validated['ids']);
         
         return response()->json([ 'message' => 'accounts withdrawn' ], 200);
     }
@@ -261,7 +235,7 @@ class TwoFAccountController extends Controller
      */
     public function destroy(TwoFAccount $twofaccount)
     {
-        $this->twofaccountService->delete($twofaccount->id);
+        TwoFAccounts::delete($twofaccount->id);
 
         return response()->json(null, 204);
     }
@@ -284,7 +258,7 @@ class TwoFAccountController extends Controller
             ], 400);
         }
 
-        $this->twofaccountService->delete($validated['ids']);
+        TwoFAccounts::delete($validated['ids']);
 
         return response()->json(null, 204);
     }

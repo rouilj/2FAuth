@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Exception;
 use App\Services\LogoService;
+use App\Facades\Settings;
 use App\Models\Dto\TotpDto;
 use App\Models\Dto\HotpDto;
 use App\Events\TwoFAccountDeleted;
@@ -12,7 +13,6 @@ use App\Exceptions\InvalidOtpParameterException;
 use App\Exceptions\UnsupportedOtpTypeException;
 use App\Exceptions\UndecipherableException;
 use Illuminate\Validation\ValidationException;
-use Facades\App\Services\SettingService;
 use Spatie\EloquentSortable\Sortable;
 use Spatie\EloquentSortable\SortableTrait;
 use OTPHP\TOTP;
@@ -373,7 +373,7 @@ class TwoFAccount extends Model implements Sortable
      * 
      * @return $this
      */
-    public function fillWithOtpParameters(array $parameters)
+    public function fillWithOtpParameters(array $parameters, bool $skipIconFetching = false)
     {
         $this->otp_type     = Arr::get($parameters, 'otp_type');
         $this->account      = Arr::get($parameters, 'account');
@@ -391,6 +391,14 @@ class TwoFAccount extends Model implements Sortable
             $this->enforceAsSteam();
         }
 
+        if (!$this->icon && $skipIconFetching) {
+            $this->icon = $this->getDefaultIcon();
+        }
+
+        if (!$this->icon && Settings::get('getOfficialIcons') && !$skipIconFetching) {
+            $this->icon = $this->getDefaultIcon();
+        } 
+
         Log::info(sprintf('TwoFAccount filled with OTP parameters'));
 
         return $this;
@@ -402,7 +410,7 @@ class TwoFAccount extends Model implements Sortable
      * 
      * @return $this
      */
-    public function fillWithURI(string $uri, bool $isSteamTotp = false)
+    public function fillWithURI(string $uri, bool $isSteamTotp = false, bool $skipIconFetching = false)
     {
         // First we instanciate the OTP generator
         try {
@@ -440,7 +448,8 @@ class TwoFAccount extends Model implements Sortable
         if ($this->generator->hasParameter('image')) {
             $this->icon = $this->storeImageAsIcon($this->generator->getParameter('image'));
         }
-        if (!$this->icon) {
+
+        if (!$this->icon && Settings::get('getOfficialIcons') && !$skipIconFetching) {
             $this->icon = $this->getDefaultIcon();
         }    
 
@@ -588,7 +597,7 @@ class TwoFAccount extends Model implements Sortable
     {
         $logoService = App::make(LogoService::class);
 
-        return $logoService->getIcon($this->service);
+        return Settings::get('getOfficialIcons') ? $logoService->getIcon($this->service) : null;
     }
 
 
@@ -598,7 +607,7 @@ class TwoFAccount extends Model implements Sortable
     private function decryptOrReturn($value)
     {
         // Decipher when needed
-        if ( SettingService::get('useEncryption') )
+        if ( Settings::get('useEncryption') && $value )
         {
             try {
                 return Crypt::decryptString($value);
@@ -619,7 +628,7 @@ class TwoFAccount extends Model implements Sortable
     private function encryptOrReturn($value)
     {
         // should be replaced by laravel 8 attribute encryption casting
-        return SettingService::get('useEncryption') ? Crypt::encryptString($value) : $value;
+        return Settings::get('useEncryption') ? Crypt::encryptString($value) : $value;
     }
 
 }

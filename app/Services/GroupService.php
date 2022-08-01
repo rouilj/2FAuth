@@ -4,35 +4,19 @@ namespace App\Services;
 
 use App\Models\Group;
 use App\Models\TwoFAccount;
-use App\Services\SettingService;
+use App\Facades\Settings;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\App;
 
 class GroupService
 {
-
-    /**
-     * The Settings Service instance.
-     */
-    protected SettingService $settingService;
-
-
-    /**
-     * Create a new controller instance.
-     * 
-     */
-    public function __construct(SettingService $settingService)
-    {
-        $this->settingService = $settingService;
-    }
-
-
     /**
      * Returns all existing groups
      * 
      * @return Collection
      */
-    public function getAll() : Collection
+    public static function getAll() : Collection
     {
         // We return the complete collection of groups
         // stored in db plus a pseudo group corresponding to 'All'
@@ -61,7 +45,7 @@ class GroupService
      * @param array $data
      * @return \App\Models\Group The created group
      */
-    public function create(array $data) : Group
+    public static function create(array $data) : Group
     {
         $group = Group::create([
             'name' => $data['name'],
@@ -82,7 +66,7 @@ class GroupService
      * @param array $data The parameters
      * @return \App\Models\Group The updated group
      */
-    public function update(Group $group, array $data) : Group
+    public static function update(Group $group, array $data) : Group
     {
         $group->update([
             'name' => $data['name'],
@@ -100,25 +84,25 @@ class GroupService
      * @param int|array $ids group ids to delete
      * @return int The number of deleted
      */
-    public function delete($ids) : int
+    public static function delete($ids) : int
     {
         $ids = is_array($ids) ? $ids : func_get_args();
 
         // A group is possibly set as the default group in Settings.
         // In this case we reset the setting to "No group" (groupId = 0)
-        $defaultGroupId = $this->settingService->get('defaultGroup');
+        $defaultGroupId = Settings::get('defaultGroup');
 
         if (in_array($defaultGroupId, $ids)) {
-            $this->settingService->set('defaultGroup', 0);
+            Settings::set('defaultGroup', 0);
         }
 
         // A group is also possibly set as the active group if the user
         // configured 2FAuth to memorize the active group.
         // In this case we reset the setting to the pseudo "All" group (groupId = 0)
-        $activeGroupId = $this->settingService->get('activeGroup');
+        $activeGroupId = Settings::get('activeGroup');
 
         if (in_array($activeGroupId, $ids)) {
-            $this->settingService->set('activeGroup', 0);
+            Settings::set('activeGroup', 0);
         }
 
         $deleted = Group::destroy($ids);
@@ -136,10 +120,10 @@ class GroupService
      * @param \App\Models\Group $group The target group
      * @return void
      */
-    public function assign($ids, Group $group = null) : void
+    public static function assign($ids, Group $group = null) : void
     {
         if (!$group) {
-            $group = $this->defaultGroup();
+            $group = self::defaultGroup();
         }
 
         if ($group) {
@@ -165,7 +149,7 @@ class GroupService
      * @param \App\Models\Group $group The group
      * @return Collection The assigned accounts
      */
-    public function getAccounts(Group $group) : Collection
+    public static function getAccounts(Group $group) : Collection
     {
         $twofaccounts = $group->twofaccounts()->where('group_id', $group->id)->get();
 
@@ -178,9 +162,9 @@ class GroupService
      * 
      * @return \App\Models\Group|null The group or null if it does not exist
      */
-    private function defaultGroup()
+    private static function defaultGroup()
     {
-        $id = $this->settingService->get('defaultGroup') === -1 ? (int) $this->settingService->get('activeGroup') : (int) $this->settingService->get('defaultGroup');
+        $id = Settings::get('defaultGroup') === -1 ? (int) Settings::get('activeGroup') : (int) Settings::get('defaultGroup');
 
         return Group::find($id);
     }

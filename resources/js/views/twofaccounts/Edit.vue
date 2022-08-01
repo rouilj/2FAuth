@@ -9,7 +9,7 @@
             <label class="label">{{ $t('twofaccounts.icon') }}</label>
             <div class="field is-grouped">
                 <!-- i'm lucky button -->
-                <div class="control">
+                <div class="control" v-if="$root.appSettings.getOfficialIcons">
                     <v-button @click="fetchLogo" :color="'is-dark'" :nativeType="'button'" :isDisabled="form.service.length < 3">
                         <span class="icon is-small">
                             <font-awesome-icon :icon="['fas', 'globe']" />
@@ -49,7 +49,7 @@
                     <p v-if="!secretIsLocked" class="control">
                         <span class="select">
                             <select @change="form.secret=''" v-model="secretIsBase32Encoded">
-                                <option v-for="format in secretFormats" :value="format.value">{{ format.text }}</option>
+                                <option v-for="(format)  in secretFormats" :key="format.value" :value="format.value">{{ format.text }}</option>
                             </select>
                         </span>
                     </p>
@@ -130,7 +130,7 @@
         </form>
         <!-- modal -->
         <modal v-model="ShowTwofaccountInModal">
-            <otp-displayer ref="AdvancedFormOtpDisplayer" v-bind="form.data()" @increment-hotp="incrementHotp">
+            <otp-displayer ref="AdvancedFormOtpDisplayer" v-bind="form.data()" @increment-hotp="incrementHotp" @validation-error="mapDisplayerErrors">
             </otp-displayer>
         </modal>
     </form-wrapper>
@@ -272,18 +272,19 @@
             },
 
             fetchLogo() {
-
-                this.axios.post('/api/v1/icons/default', {service: this.form.service}, {returnError: true}).then(response => {
-                    if (response.status === 201) {
-                        // clean possible already uploaded temp icon
-                        this.deleteIcon()
-                        this.tempIcon = response.data.filename;
-                    }
-                    else this.$notify({type: 'is-warning', text: this.$t('errors.no_logo_found_for_x', {service: this.form.service}) })
-                })
-                .catch(error => {
-                    this.$notify({type: 'is-warning', text: this.$t('errors.no_logo_found_for_x', {service: this.form.service}) })
-                });
+                if (this.$root.appSettings.getOfficialIcons) {
+                    this.axios.post('/api/v1/icons/default', {service: this.form.service}, {returnError: true}).then(response => {
+                        if (response.status === 201) {
+                            // clean possible already uploaded temp icon
+                            this.deleteIcon()
+                            this.tempIcon = response.data.filename;
+                        }
+                        else this.$notify({type: 'is-warning', text: this.$t('errors.no_logo_found_for_x', {service: this.form.service}) })
+                    })
+                    .catch(error => {
+                        this.$notify({type: 'is-warning', text: this.$t('errors.no_logo_found_for_x', {service: this.form.service}) })
+                    });
+                }
             },
 
             deleteIcon(event) {
@@ -303,6 +304,10 @@
                 this.form.counter = payload.nextHotpCounter
                 this.form.uri = payload.nextUri
             },
+
+            mapDisplayerErrors (event) {
+                this.form.errors.set(this.form.extractErrors(event))
+            }
 
         },
 

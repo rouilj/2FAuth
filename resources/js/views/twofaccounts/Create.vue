@@ -16,9 +16,9 @@
                 </div>
                 <div class="columns is-mobile" v-if="form.errors.any()">
                     <div class="column">
-                        <p v-for="field in form.errors.errors" class="help is-danger">
+                        <p v-for="(field, index) in form.errors.errors" :key="index" class="help is-danger">
                             <ul>
-                                <li v-for="(error, index) in field">{{ error }}</li>
+                                <li v-for="(error, index) in field" :key="index">{{ error }}</li>
                             </ul>
                         </p>
                     </div>
@@ -63,8 +63,8 @@
                 <label class="label">{{ $t('twofaccounts.icon') }}</label>
                 <div class="field is-grouped">
                     <!-- i'm lucky button -->
-                    <div class="control">
-                        <v-button @click="fetchLogo" :color="'is-dark'" :nativeType="'button'" :isDisabled="form.service.length < 3">
+                    <div class="control" v-if="$root.appSettings.getOfficialIcons">
+                        <v-button @click="fetchLogo" :color="'is-dark'" :nativeType="'button'" :isDisabled="form.service.length < 1">
                             <span class="icon is-small">
                                 <font-awesome-icon :icon="['fas', 'globe']" />
                             </span>
@@ -95,7 +95,7 @@
                     <p class="help" v-html="$t('twofaccounts.forms.i_m_lucky_legend')"></p>
                 </div>
                 <!-- otp type -->
-                <form-toggle @otp_type="setFormState" class="has-uppercased-button" :form="form" :choices="otp_types" fieldName="otp_type" :label="$t('twofaccounts.forms.otp_type.label')" :help="$t('twofaccounts.forms.otp_type.help')" :hasOffset="true" />
+                <form-toggle class="has-uppercased-button" :form="form" :choices="otp_types" fieldName="otp_type" :label="$t('twofaccounts.forms.otp_type.label')" :help="$t('twofaccounts.forms.otp_type.help')" :hasOffset="true" />
                 <div v-if="form.otp_type">
                     <!-- secret -->
                     <label class="label" v-html="$t('twofaccounts.forms.secret.label')"></label>
@@ -103,7 +103,7 @@
                         <p class="control">
                             <span class="select">
                                 <select @change="form.secret=''" v-model="secretIsBase32Encoded">
-                                    <option v-for="format in secretFormats" :value="format.value">{{ format.text }}</option>
+                                    <option v-for="(format) in secretFormats" :key="format.value" :value="format.value">{{ format.text }}</option>
                                 </select>
                             </span>
                         </p>
@@ -144,7 +144,7 @@
             </form>
             <!-- modal -->
             <modal v-model="ShowTwofaccountInModal">
-                <otp-displayer ref="AdvancedFormOtpDisplayer" v-bind="form.data()" @increment-hotp="incrementHotp">
+                <otp-displayer ref="AdvancedFormOtpDisplayer" v-bind="otpdisplayerData" @increment-hotp="incrementHotp" @validation-error="mapDisplayerErrors">
                 </otp-displayer>
             </modal>
         </form-wrapper>
@@ -249,6 +249,21 @@
                     this.$refs.QuickFormOtpDisplayer.internal_icon = val
                 }
             },
+
+            'form.otp_type' : function(to, from) {
+                this.setFormState(from, to) 
+            },
+        },
+
+        computed: {
+            otpdisplayerData: function() {
+                let o = this.form.data()
+                o.secret = this.secretIsBase32Encoded
+                    ? o.secret
+                    : Base32.encode(o.secret).toString();
+
+                    return o
+            }
         },
 
         mounted: function () {
@@ -307,6 +322,7 @@
             },
 
             previewAccount() {
+                this.form.clear()
                 this.$refs.AdvancedFormOtpDisplayer.show()
             },
 
@@ -363,18 +379,19 @@
             },
 
             fetchLogo() {
-
-                this.axios.post('/api/v1/icons/default', {service: this.form.service}, {returnError: true}).then(response => {
-                    if (response.status === 201) {
-                        // clean possible already uploaded temp icon
-                        this.deleteIcon()
-                        this.tempIcon = response.data.filename;
-                    }
-                    else this.$notify({type: 'is-warning', text: this.$t('errors.no_logo_found_for_x', {service: this.form.service}) })
-                })
-                .catch(error => {
-                    this.$notify({type: 'is-warning', text: this.$t('errors.no_logo_found_for_x', {service: this.form.service}) })
-                });
+                if (this.$root.appSettings.getOfficialIcons) {
+                    this.axios.post('/api/v1/icons/default', {service: this.form.service}, {returnError: true}).then(response => {
+                        if (response.status === 201) {
+                            // clean possible already uploaded temp icon
+                            this.deleteIcon()
+                            this.tempIcon = response.data.filename;
+                        }
+                        else this.$notify({type: 'is-warning', text: this.$t('errors.no_logo_found_for_x', {service: this.form.service}) })
+                    })
+                    .catch(error => {
+                        this.$notify({type: 'is-warning', text: this.$t('errors.no_logo_found_for_x', {service: this.form.service}) })
+                    });
+                }
             },
 
             deleteIcon(event) {
@@ -405,11 +422,24 @@
                 console.log('error', value)
             },
 
-            setFormState (event) {
-                this.form.otp_type = event
-                this.form.service = event === 'steamtotp' ? 'Steam' : ''
-                this.secretIsBase32Encoded = event === 'steamtotp' ? 1 : this.secretIsBase32Encoded
+            setFormState (from, to) {
+                this.form.otp_type = to
+
+                if (to === 'steamtotp') {
+                    this.secretIsBase32Encoded = 1
+                    this.form.service = 'Steam'
+                    this.form.secret = ''
+                    this.fetchLogo()
+                }
+                else if (from === 'steamtotp') {
+                    this.form.service = ''
+                    this.deleteIcon()
+                }
             },
+
+            mapDisplayerErrors (event) {
+                this.form.errors.set(this.form.extractErrors(event))
+            }
             
         },
 

@@ -8,6 +8,8 @@ use Tests\TestCase;
 use App\Listeners\CleanIconStorage;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Event;
+use Mockery\MockInterface;
+use App\Services\SettingService;
 
 
 /**
@@ -17,16 +19,17 @@ class CleanIconStorageTest extends TestCase
 {
     public function test_it_deletes_icon_file_on_twofaccount_deletion()
     {
-        \Facades\App\Services\SettingService::shouldReceive('get')
-            ->with('useEncryption')
-            ->andReturn(false);
+        $settingService = $this->mock(SettingService::class, function (MockInterface $settingService) {
+            $settingService->shouldReceive('get')
+                ->andReturn(false);
+        });
 
         $twofaccount = TwoFAccount::factory()->make();
         $event = new TwoFAccountDeleted($twofaccount);
         $listener = new CleanIconStorage();
 
-        Storage::shouldReceive('delete')
-            ->with('public/icons/' . $event->twofaccount->icon)
+        Storage::shouldReceive('disk->delete')
+            ->with($event->twofaccount->icon)
             ->andReturn(true);
 
         $this->assertNull($listener->handle($event));
