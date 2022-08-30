@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Facades\Settings;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\WebauthnRenameRequest;
@@ -27,6 +28,8 @@ class WebAuthnManageController extends Controller
 
     /**
      * List all WebAuthn registered credentials
+     * 
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)
     {
@@ -71,6 +74,13 @@ class WebAuthnManageController extends Controller
     {
         $user = $request->user();
         $user->removeCredential($credential);
+
+        // Webauthn user options should be reset to prevent impossible login
+        // See #110
+        if (blank($user->allCredentialDescriptors())) {
+            Settings::delete('useWebauthnAsDefault');
+            Settings::delete('useWebauthnOnly');
+        }
 
         return response()->json(null, 204);
     }

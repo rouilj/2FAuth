@@ -1,5 +1,20 @@
 # Change log
 
+## [3.3.3] - 2022-08-16
+
+### Fixed
+
+- [issue #110](https://github.com/Bubka/2FAuth/issues/110) Can't sign in with login/password after the removal of the last webauthn device
+- [issue #111](https://github.com/Bubka/2FAuth/issues/111) Inappropriate notification about existing user during registration
+- [issue #113](https://github.com/Bubka/2FAuth/issues/113) Password reset does not work
+- [issue #115](https://github.com/Bubka/2FAuth/issues/115) WEBAUTHN_NAME .env variable set as null generates server error
+
+## [3.3.1-3.3.2] - 2022-08-02
+
+### Fixed
+
+- [issue #109](https://github.com/Bubka/2FAuth/issues/109) Timeout right after login
+
 ## [3.3] - 2022-08-01
 
 ⚠️ This release drops PHP 7.4 support ⚠️

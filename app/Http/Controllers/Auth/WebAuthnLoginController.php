@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use DarkGhostHunter\Larapass\Http\AuthenticatesWebAuthn;
+use Carbon\Carbon;
 
 class WebAuthnLoginController extends Controller
 {
@@ -26,7 +27,9 @@ class WebAuthnLoginController extends Controller
     |
     */
 
-
+    /**
+     * @return \Illuminate\Http\JsonResponse|\Webauthn\PublicKeyCredentialRequestOptions
+     */
 	public function options(Request $request)
 	{
         // Since 2FAuth is single user designed we fetch the user instance
@@ -72,5 +75,20 @@ class WebAuthnLoginController extends Controller
         }
 
         return $this->traitLogin($request);
+    }
+
+
+    /**
+     * The user has been authenticated.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  mixed  $user
+     *
+     * @return void|\Illuminate\Http\JsonResponse
+     */
+    protected function authenticated(Request $request, $user)
+    {
+        $user->last_seen_at = Carbon::now()->format('Y-m-d H:i:s');
+        $user->save();
     }
 }

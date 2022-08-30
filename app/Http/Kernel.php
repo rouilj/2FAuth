@@ -48,6 +48,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\Authenticate::class,
+            \App\Http\Middleware\LogUserLastSeen::class,
             \App\Http\Middleware\KickOutInactiveUser::class,
             \App\Http\Middleware\CustomCreateFreshApiToken::class,
         ],
@@ -82,7 +83,7 @@ class Kernel extends HttpKernel
      *
      * This forces non-global middleware to always be in the given order.
      *
-     * @var array
+     * @var string[]
      */
     protected $middlewarePriority = [
         \Illuminate\Session\Middleware\StartSession::class,
