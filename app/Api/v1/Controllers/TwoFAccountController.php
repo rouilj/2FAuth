@@ -103,17 +103,25 @@ class TwoFAccountController extends Controller
 
 
     /**
-     * Dry-import Google authenticator data
+     * Convert a migration resource to a valid TwoFAccounts collection
      *
      * @param  \App\Api\v1\Requests\TwoFAccountImportRequest  $request
-     * @return \App\Api\v1\Resources\TwoFAccountCollection
+     * @return \Illuminate\Http\JsonResponse|\App\Api\v1\Resources\TwoFAccountCollection
      */
-    public function import(TwoFAccountImportRequest $request)
-    { 
-        $request->merge(['withSecret' => true]);
-        $twofaccounts = TwoFAccounts::convertMigrationFromGA($request->uri);
+    public function migrate(TwoFAccountImportRequest $request)
+    {
+        $validated = $request->validated();
 
-        return new TwoFAccountCollection($twofaccounts);
+        if (Arr::has($validated, 'file')) {
+            $migrationResource = $request->file('file');
+            
+            return $migrationResource instanceof \Illuminate\Http\UploadedFile
+                ? new TwoFAccountCollection(TwoFAccounts::migrate($migrationResource->get()))
+                : response()->json(['message' => __('errors.file_upload_failed')], 500);
+        }
+        else {
+            return new TwoFAccountCollection(TwoFAccounts::migrate($request->payload));
+        }
     }
 
 

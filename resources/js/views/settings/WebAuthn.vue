@@ -9,8 +9,8 @@
                     {{ $t('auth.webauthn.security_devices_legend')}}
                 </div>
                 <div class="mt-3">
-                    <a class="is-link" @click="register()">
-                        <font-awesome-icon :icon="['fas', 'plus-circle']" /> {{ $t('auth.webauthn.register_a_new_device')}}
+                    <a tabindex="0" @click="register" @keyup.enter="register">
+                        <font-awesome-icon :icon="['fas', 'plus-circle']" />&nbsp;{{ $t('auth.webauthn.register_a_new_device')}}
                     </a>
                 </div>
                 <!-- credentials list -->
@@ -18,9 +18,9 @@
                     <div v-for="credential in credentials" :key="credential.id" class="group-item has-text-light is-size-5 is-size-6-mobile">
                         {{ displayName(credential) }}
                         <!-- revoke link -->
-                        <a class="tag is-dark is-pulled-right" @click="revokeCredential(credential.id)" :title="$t('settings.revoke')">
+                        <button class="button tag is-dark is-pulled-right" @click="revokeCredential(credential.id)" :title="$t('settings.revoke')">
                             {{ $t('settings.revoke') }}
-                        </a>
+                        </button>
                         <!-- edit link -->
                         <!-- <router-link :to="{ name: '' }" class="has-text-grey pl-1" :title="$t('commons.rename')">
                             <font-awesome-icon :icon="['fas', 'pen-square']" />
@@ -165,7 +165,6 @@
                 const publicKeyCredential = this.parseOutgoingCredentials(bufferedCredentials);
 
                 this.axios.post('/webauthn/register', publicKeyCredential).then(response => {
-                    this.$notify({ type: 'is-success', text: this.$t('auth.webauthn.device_successfully_registered') })
                     this.$router.push({ name: 'settings.webauthn.editCredential', params: { id: publicKeyCredential.id, name: this.$t('auth.webauthn.my_device') } })
                 })
             },

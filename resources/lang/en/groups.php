@@ -15,7 +15,9 @@ return [
 
     'groups' => 'Groups',
     'create_group' => 'Create new group',
-    'select_accounts_to_show' => 'Select accounts to show',
+    'show_group_selector' => 'Show group selector',
+    'hide_group_selector' => 'Hide group selector',
+    'select_accounts_to_show' => 'Select accounts group to show',
     'manage_groups' => 'Manage groups',
     'active_group' => 'Active group',
     'manage_groups_legend' => 'You can create groups to organize your accounts the way you want. All accounts remain visible in the pseudo group named \'All\', regardless of the group they belong to.',
@@ -23,6 +25,9 @@ return [
     'move_selected_to' => 'Move selected to',
     'no_group' => 'No group',
     'change_group' => 'Change group',
+    'group_successfully_created' => 'Group successfully created',
+    'group_name_saved' => 'Group name saved',
+    'group_successfully_deleted' => 'Group successfully deleted',
     'forms' => [
         'new_group' => 'New group',
         'new_name' => 'New name',

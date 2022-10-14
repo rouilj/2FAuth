@@ -17,12 +17,19 @@ return [
     'account' => 'Account',
     'accounts' => 'Accounts',
     'icon' => 'Icon',
+    'icon_for_account_x_at_service_y' => 'Icon of the {account} account at {service}',
+    'icon_to_illustrate_the_account' => 'Icon that illustrates the account',
+    'remove_icon' => 'Remove icon',
     'no_account_here' => 'No 2FA here!',
-    'add_first_account' => 'Add your first account',
+    'add_first_account' => 'Pick a method and add your first account',
     'use_full_form' => 'Or use the full form',
     'add_one' => 'Add one',
     'show_qrcode' => 'Show QR code',
     'no_service' => '- no service -',
+    'account_created' => 'Account successfully created',
+    'account_updated' => 'Account successfully updated',
+    'accounts_deleted' => 'Account(s) successfully deleted',
+    'accounts_moved' => 'Account(s) successfully moved',
     'forms' => [
         'service' => [
             'placeholder' => 'Google, Twitter, Apple',
@@ -59,8 +66,8 @@ return [
         ],
         'plain_text' => 'Plain text',
         'otp_type' => [
-            'label' => 'Choose the type of OTP to create',
-            'help' => 'Time-based OTP or HMAC-based OTP'
+            'label' => 'Choose the type of <abbr title="One-Time Password">OTP</abbr> to create',
+            'help' => 'Time-based OTP or HMAC-based OTP or Steam OTP'
         ],
         'digits' => [
             'label' => 'Digits',
@@ -127,8 +134,14 @@ return [
     'import' => [
         'import' => 'Import',
         'to_import' => 'Import',
-        'import_legend' => 'Import your Google Authenticator accounts.',
-        'use_the_gauth_qr_code' => 'Load a G-Auth QR code',
+        'import_legend' => '2FAuth can import data from various 2FA apps.<br />Use the Export feature of these apps to get a migration resource (a QR code or a file) and load it using your preferred method below.',
+        'upload' => 'Upload',
+        'scan' => 'Scan',
+        'supported_formats_for_qrcode_upload' => 'Accepted: jpg, jpeg, png, bmp, gif, svg, or webp',
+        'supported_formats_for_file_upload' => 'Accepted: Plain text, json, 2fas',
+        'supported_migration_formats' => 'Supported migration formats',
+        'qr_code' => 'QR Code',
+        'plain_text' => 'Plain text',
         'issuer' => 'Issuer',
         'imported' => 'Imported',
         'failure' => 'Failure',
@@ -140,6 +153,9 @@ return [
         'discard_this_account' => 'Discard this account',
         'generate_a_test_password' => 'Generate a test pasword',
         'possible_duplicate' => 'An account with the exact same data already exists',
+        'invalid_account' => '- invalid account -',
+        'invalid_service' => '- invalid service -',
+        'do_not_set_password_or_encryption' => 'Do NOT set a password or encryption On when you export data from a 2FA app.',
     ],
 
 ];

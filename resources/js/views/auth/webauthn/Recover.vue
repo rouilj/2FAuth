@@ -10,11 +10,13 @@
         <div v-else>
             <div class="field">
                 <input id="unique" name="unique" type="checkbox" class="is-checkradio is-info" v-model="unique" >
-                <label for="unique" class="label">{{ $t('auth.webauthn.disable_all_other_devices') }}</label>
+                <label tabindex="0" for="unique" class="label" ref="uniqueLabel" v-on:keypress.space.prevent="unique = true">
+                    {{ $t('auth.webauthn.disable_all_other_devices') }}
+                </label>
             </div>
             <div class="field is-grouped">
                 <div class="control">
-                    <a class="button is-link" @click="register()">{{ $t('auth.webauthn.register_a_new_device')}}</a>
+                    <button class="button is-link" @click="register()">{{ $t('auth.webauthn.register_a_new_device')}}</button>
                 </div>
                 <div class="control">
                     <router-link :to="{ name: 'login' }" class="button is-text">{{ $t('commons.cancel') }}</router-link>

@@ -1,11 +1,15 @@
 <template>
     <div>
         <figure class="image is-64x64" :class="{ 'no-icon': !internal_icon }" style="display: inline-block">
-            <img :src="'/storage/icons/' + internal_icon" v-if="internal_icon">
+            <img :src="'/storage/icons/' + internal_icon" v-if="internal_icon" :alt="$t('twofaccounts.icon_to_illustrate_the_account')">
         </figure>
         <p class="is-size-4 has-text-grey-light has-ellipsis">{{ internal_service }}</p>
         <p class="is-size-6 has-text-grey has-ellipsis">{{ internal_account }}</p>
-        <p class="is-size-1 has-text-white is-clickable" :title="$t('commons.copy_to_clipboard')" v-clipboard="() => internal_password.replace(/ /g, '')" v-clipboard:success="clipboardSuccessHandler">{{ displayedOtp }}</p>
+        <p>
+            <span role="log" ref="otp" tabindex="0" class="otp is-size-1 has-text-white is-clickable px-3" @click="copyOTP(internal_password)" @keyup.enter="copyOTP(internal_password)" :title="$t('commons.copy_to_clipboard')">
+                {{ displayedOtp }}
+            </span>
+        </p>
         <ul class="dots" v-show="isTimeBased(internal_otp_type)">
             <li v-for="n in 10" :key="n"></li>
         </ul>
@@ -70,7 +74,33 @@
             this.show()
         },
 
+        // created() {
+        // },
+
         methods: {
+
+            copyOTP (otp) {
+                // see https://web.dev/async-clipboard/ for futur Clipboard API usage.
+                // The API should allow to copy the password on each trip without user interaction.
+
+                // For now too many browsers don't support the clipboard-write permission
+                // (see https://developer.mozilla.org/en-US/docs/Web/API/Permissions#browser_support)
+
+                const rawOTP = otp.replace(/ /g, '')
+                const success = this.$clipboard(rawOTP)
+
+                if (success == true) {
+                    if(this.$root.appSettings.kickUserAfter == -1) {
+                        this.appLogout()
+                    }
+                    else if(this.$root.appSettings.closeOtpOnCopy) {
+                        this.$parent.isActive = false
+                        this.clearOTP()
+                    }
+
+                    this.$notify({ type: 'is-success', text: this.$t('commons.copied_to_clipboard') })
+                }
+            },
 
             isTimeBased: function(otp_type) {
                 return (otp_type === 'totp' || otp_type === 'steamtotp')
@@ -133,6 +163,7 @@
                         else this.$router.push({ name: 'genericError', params: { err: this.$t('errors.not_a_supported_otp_type') } });
     
                         this.$parent.isActive = true
+                        this.focusOnOTP()
                     }
                     catch(error) {
                         this.clearOTP()
@@ -143,30 +174,50 @@
             getOtp: async function() {
 
                 try {
+                    let request, password
+
                     if(this.internal_id) {
-                        const { data } =  await this.axios.get('/api/v1/twofaccounts/' + this.internal_id + '/otp')
-                        return data
+                        request = {
+                            method: 'get',
+                            url: '/api/v1/twofaccounts/' + this.internal_id + '/otp'
+                        }
                     }
                     else if(this.internal_uri) {
-                        const { data } =  await this.axios.post('/api/v1/twofaccounts/otp', {
-                            uri: this.internal_uri
-                        })
-                        return data
+                        request = {
+                            method: 'post',
+                            url: '/api/v1/twofaccounts/otp',
+                            data: {
+                                uri: this.internal_uri
+                            }
+                        }
                     }
                     else {
-                        const { data } =  await this.axios.post('/api/v1/twofaccounts/otp', {
-                            service     : this.internal_service,
-                            account     : this.internal_account,
-                            icon        : this.internal_icon,
-                            otp_type    : this.internal_otp_type,
-                            secret      : this.internal_secret,
-                            digits      : this.internal_digits,
-                            algorithm   : this.internal_algorithm,
-                            period      : this.internal_period,
-                            counter     : this.internal_counter,
-                        })
-                        return data
+                        request = {
+                            method: 'post',
+                            url: '/api/v1/twofaccounts/otp',
+                            data: {
+                                service     : this.internal_service,
+                                account     : this.internal_account,
+                                icon        : this.internal_icon,
+                                otp_type    : this.internal_otp_type,
+                                secret      : this.internal_secret,
+                                digits      : this.internal_digits,
+                                algorithm   : this.internal_algorithm,
+                                period      : this.internal_period,
+                                counter     : this.internal_counter,
+                            }
+                        }
                     }
+
+                    await this.axios(request).then(response => {
+                        if(this.$root.appSettings.copyOtpOnDisplay) {
+                            this.copyOTP(response.data.password)
+                        }
+                        password = response.data
+                    })
+
+                    return password
+
                 }
                 catch(error) {
                     if (error.response.status === 422) {
@@ -182,6 +233,7 @@
 
                 this.internal_password = otp.password
                 this.internal_otp_type = otp.otp_type
+
                 let generated_at = otp.generated_at
                 let period = otp.period
 
@@ -255,6 +307,8 @@
             getHOTP: async function() {
 
                 let otp = await this.getOtp()
+                this.internal_password = otp.password
+                this.internal_counter = otp.counter
 
                 // returned counter & uri are incremented
                 this.$emit('increment-hotp', { nextHotpCounter: otp.counter, nextUri: otp.uri })
@@ -295,23 +349,10 @@
                 }
             },
 
-
-            clipboardSuccessHandler ({ value, event }) {
-
-                if(this.$root.appSettings.kickUserAfter == -1) {
-                    this.appLogout()
-                }
-                else if(this.$root.appSettings.closeOtpOnCopy) {
-                    this.$parent.isActive = false
-                    this.clearOTP()
-                }
-
-                this.$notify({ type: 'is-success', text: this.$t('commons.copied_to_clipboard') })
-            },
-
-
-            clipboardErrorHandler ({ value, event }) {
-                console.log('error', value)
+            focusOnOTP() {
+                this.$nextTick(() => {
+                    this.$refs.otp.focus()
+                })
             }
 
         },

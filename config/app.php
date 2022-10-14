@@ -175,7 +175,7 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
         App\Providers\TwoFAuthServiceProvider::class,
-
+        App\Providers\MigrationServiceProvider::class,
     ],
 
     /*
@@ -232,7 +232,7 @@ return [
         'QrCode' => App\Facades\QrCode::class,
         'Groups' => App\Facades\Groups::class,
         'TwoFAccounts' => App\Facades\TwoFAccounts::class,
-        
+        'Helpers' => App\Helpers\Helpers::class,
     ],
 
 ];

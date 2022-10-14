@@ -1,6 +1,6 @@
 <template>
     <div>
-        <setting-tabs :activeTab="'settings.oauth'"></setting-tabs>
+        <setting-tabs :activeTab="'settings.oauth.tokens'"></setting-tabs>
         <div class="options-tabs">
             <form-wrapper>
                 <div v-if="isRemoteUser" class="notification is-warning has-text-centered" v-html="$t('auth.auth_handled_by_proxy')" />
@@ -9,7 +9,7 @@
                     {{ $t('settings.token_legend')}}
                 </div>
                 <div class="mt-3">
-                    <a class="is-link" @click="createToken()">
+                    <a tabindex="0" class="is-link" @click="createToken" @keyup.enter="createToken">
                         <font-awesome-icon :icon="['fas', 'plus-circle']" /> {{ $t('settings.generate_new_token')}}
                     </a>
                 </div>
@@ -18,8 +18,8 @@
                         <font-awesome-icon v-if="token.value" class="has-text-success" :icon="['fas', 'check']" /> {{ token.name }}
                         <!-- revoke link -->
                         <div class="tags is-pulled-right">
-                            <a v-if="token.value" class="tag" v-clipboard="() => token.value" v-clipboard:success="clipboardSuccessHandler">{{ $t('commons.copy') }}</a>
-                            <a class="tag is-dark " @click="revokeToken(token.id)" :title="$t('settings.revoke')">{{ $t('settings.revoke') }}</a>
+                            <button v-if="token.value" class="button tag" v-clipboard="() => token.value" v-clipboard:success="clipboardSuccessHandler">{{ $t('commons.copy') }}</button>
+                            <button class="button tag is-dark " @click="revokeToken(token.id)" :title="$t('settings.revoke')">{{ $t('settings.revoke') }}</button>
                         </div>
                         <!-- edit link -->
                         <!-- <router-link :to="{ name: 'settings.oauth.editPAT' }" class="has-text-grey pl-1" :title="$t('commons.edit')">
@@ -47,7 +47,7 @@
                 <vue-footer :showButtons="true">
                     <!-- close button -->
                     <p class="control">
-                        <router-link :to="{ name: 'accounts', params: { toRefresh: false } }" class="button is-dark is-rounded">{{ $t('commons.close') }}</router-link>
+                        <router-link :to="{ name: 'accounts', params: { toRefresh: false } }" class="button is-dark is-rounded" tabindex="0">{{ $t('commons.close') }}</router-link>
                     </p>
                 </vue-footer>
             </form-wrapper>

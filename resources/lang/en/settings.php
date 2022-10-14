@@ -50,11 +50,15 @@ return [
         ],
         'show_otp_as_dot' => [
             'label' => 'Show generated one-time passwords as dot',
-            'help' => 'Replace generated password caracters with *** to ensure confidentiality. Do not affect the copy/paste feature.'
+            'help' => 'Replace generated password caracters with *** to ensure confidentiality. Do not affect the copy/paste feature'
         ],
         'close_otp_on_copy' => [
-            'label' => 'Close OTP after copy',
-            'help' => 'Automatically close the popup showing the generated password after it has been copied'
+            'label' => 'Close <abbr title="One-Time Password">OTP</abbr> after copy',
+            'help' => 'Clicking a generated password to copy it automatically hide it from the screen'
+        ],
+        'copy_otp_on_display' => [
+            'label' => 'Copy <abbr title="One-Time Password">OTP</abbr> on display',
+            'help' => 'Automatically copy a generated password right after it appears on screen. Due to browsers limitations, only the first <abbr title="Time-based One-Time Password">TOTP</abbr> password will be copied, not the rotating ones'
         ],
         'use_basic_qrcode_reader' => [
             'label' => 'Use basic QR code reader',

@@ -3,14 +3,14 @@
         <div class="modal-background"></div>
         <div class="modal-content">
             <p class="has-text-centered m-5">
-                <img :src="qrcode" class="has-background-light">
+                <img :src="qrcode" class="has-background-light" :alt="$t('commons.image_of_qrcode_to_scan')">
             </p>
         </div>
         <div class="fullscreen-footer">
             <!-- Close button -->
-            <label class="button is-dark is-rounded" @click.stop="$router.push({name: 'accounts', params: { InitialEditMode: true }});">
+            <button class="button is-dark is-rounded" @click.stop="$router.push({name: 'accounts', params: {initialEditMode: true}});">
                 {{ $t('commons.close') }}
-            </label>
+            </button>
         </div>
     </div>
 </template>

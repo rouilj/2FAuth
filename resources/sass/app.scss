@@ -35,6 +35,7 @@ a:hover {
   padding-top: 1rem;
   padding-bottom: 1rem;
   width: 100%;
+  z-index: 1000;
 }
 
 @supports (padding-top: env(safe-area-inset-top)) {
@@ -51,6 +52,19 @@ a:hover {
   }
 }
 
+.modal-otp {
+  z-index: 2000;
+}
+
+.otp:focus-visible {
+  outline-offset: 3px;
+  outline: 2px dotted $dark;
+  border-radius: $radius-large;
+}
+.otp:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .group-item {
   border-bottom: 1px solid hsl(0, 0%, 21%);
   padding: 0.75rem;
@@ -65,7 +79,7 @@ a:hover {
 }
 
 .accounts {
-  margin-top: 64px;
+  margin-top: 75px;
 }
 
 .groups {
@@ -82,7 +96,7 @@ a:hover {
 
 @media screen and (min-width: 769px) {
   .accounts {
-    margin-top: 84px;
+    margin-top: 99px;
   }
 }
 
@@ -205,12 +219,19 @@ a:hover {
     flex-grow: 1;
     overflow: hidden;
 }
+.tfa-content:focus-visible
+{
+    outline: 1px solid $grey;
+    border: none;
+    outline-offset: 7px;
+    border-radius: 3px;
+}
+.tfa-content:focus:not(:focus-visible) {
+  outline: none;
+}
 
-// .tfa-grid .tfa-content {
-// }
-
-.tfa-list .tfa-content {
-    padding-right: 1rem;
+.is-edit-mode .tfa-list .tfa-content {
+    margin-right: 1rem;
 }
 
 .tfa-dots {
@@ -373,6 +394,14 @@ figure.no-icon {
   color: hsl(0, 0%, 21%);
 }
 
+.button.has-line-height {
+  height: inherit !important;
+}
+  .button.has-line-height span {
+    display: inline-block;
+    line-height: 1rem;
+  }
+
 .button.is-dark.field-lock, .button.is-dark.field-unlock {
   color: hsl(0, 0%, 48%);
 }
@@ -382,8 +411,277 @@ figure.no-icon {
   border-left: none;
 }
 
+.button.is-like-text {
+  line-height: inherit !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: auto;
+  text-decoration: none;
+}
+.button.copy-text:hover,
+.button.copy-text:active,
+.button.copy-text:focus,
+.button.copy-text:focus-visible,
+.button.copy-text:focus-within,
+.button.is-like-text:hover,
+.button.is-like-text:active, 
+.button.is-like-text:focus, 
+.button.is-like-text:focus-visible, 
+.button.is-like-text:focus-within {
+  background: inherit;
+  color: inherit;
+  // box-shadow: inherit;
+}
+
+
+.button:focus-visible, .button.is-focused,
+.file[role=button]:focus-visible {
+  border-color: transparent;
+  outline-offset: 3px;
+  outline-style: solid;
+  outline-width: 2px;
+}
+.button:focus:not(:focus-visible),
+.file[role=button]:focus:not(:focus-visible)
+{
+  outline: none;
+}
+.button:focus:not(:active), .button.is-focused:not(:active),
+.button.is-white:focus:not(:active), .button.is-white.is-focused:not(:active),
+.button.is-light:focus:not(:active), .button.is-light.is-focused:not(:active),
+.button.is-dark:focus:not(:active), .button.is-dark.is-focused:not(:active),
+.button.is-black:focus:not(:active), .button.is-black.is-focused:not(:active),
+.button.is-text:focus:not(:active), .button.is-text.is-focused:not(:active),
+.button.is-ghost:focus:not(:active), .button.is-ghost.is-focused:not(:active),
+.button.is-primary:focus:not(:active), .button.is-primary.is-focused:not(:active),
+.button.is-link:focus:not(:active), .button.is-link.is-focused:not(:active),
+.button.is-info:focus:not(:active), .button.is-info.is-focused:not(:active),
+.button.is-success:focus:not(:active), .button.is-success.is-focused:not(:active),
+.button.is-warning:focus:not(:active), .button.is-warning.is-focused:not(:active),
+.button.is-danger:focus:not(:active), .button.is-danger.is-focused:not(:active)
+{
+	box-shadow: none;
+}
+.button.is-white:focus, .button.is-white:focus-visible, .button.is-white.is-focused
+{
+  outline-color: $white;
+}
+.button.is-light:focus, .button.is-light:focus-visible, .button.is-light.is-focused
+{
+  outline-color: $grey-lightest;
+}
+.button.is-dark:focus, .button.is-dark:focus-visible, .button.is-dark.is-focused,
+.file[role=button].is-dark:focus, .file[role=button].is-dark:focus-visible
+{
+  outline-color: $dark;
+}
+.button.is-black:focus, .button.is-black:focus-visible, .button.is-black.is-focused,
+.file[role=button].is-black:focus, .file[role=button].is-black:focus-visible
+{
+  outline-color: $black;
+}
+.button.is-text:focus, .button.is-text:focus-visible, .button.is-text.is-focused
+{
+  outline-color: $text;
+}
+.button.is-ghost:focus, .button.is-ghost:focus-visible, .button.is-ghost.is-focused
+{
+  outline-color: $text;
+}
+.button.is-primary:focus, .button.is-primary:focus-visible, .button.is-primary.is-focused
+{
+  outline-color: $primary;
+}
+.button.is-link:focus, .button.is-link:focus-visible, .button.is-link.is-focused
+{
+  outline-color: $link;
+}
+.button.is-info:focus, .button.is-info:focus-visible, .button.is-info.is-focused
+{
+  outline-color: $info;
+}
+.button.is-success:focus, .button.is-success:focus-visible, .button.is-success.is-focused
+{
+  outline-color: $success;
+}
+.button.is-warning:focus, .button.is-warning:focus-visible, .button.is-warning.is-focused
+{
+  outline-color: $warning;
+}
+.button.is-danger:focus, .button.is-danger:focus-visible, .button.is-danger.is-focused
+{
+  outline-color: $danger;
+}
+
+button.is-double-focused:focus-visible
+{
+  outline-style: double !important;
+  outline-width: 6px !important;
+}
+button.is-double-focused:focus:not(:focus-visible)
+{
+  outline: none;
+}
+
+.file[role=button]:focus-visible {
+  border-radius: $radius;
+}
+.file[role=button].is-small:focus-visible {
+  border-radius: $radius-small;
+}
+
+.tag-button:focus-visible
+{
+  border-color: transparent;
+  border-radius: 3px;
+  outline-width: 1px;
+  outline-style: solid;
+  outline-offset: 3px;
+}
+.tag-button:focus:not(:focus-visible)
+{
+  outline: none;
+}
+.tag-button-link:focus-visible
+{
+  outline-color: $link;
+}
+.tag-button-danger:focus-visible
+{
+  outline-color: $danger;
+}
+
+.clear-selection
+{
+  vertical-align: bottom;
+}
+.clear-selection:focus-visible
+{
+  border-color: transparent;
+  outline-offset: 1px;
+  outline: 2px solid $text;
+}
+.clear-selection:focus:not(:focus-visible)
+{
+  outline: none;
+}
+
+a:focus-visible
+{
+  outline-offset: 2px;
+  border-radius: 3px;
+  outline: 1px dashed $link;
+}
+a:focus:not(:focus-visible)
+{
+  outline: none;
+}
+a.has-text-black-bis:focus, a.has-text-black-bis:focus-visible {
+  outline-color: $black-bis;
+}
+a.has-text-black-ter:focus, a.has-text-black-ter:focus-visible {
+  outline-color: $black-ter;
+}
+a.has-text-grey-darker:focus, a.has-text-grey-darker:focus-visible {
+  outline-color: $grey-darker;
+}
+a.has-text-grey-dark:focus, a.has-text-grey-dark:focus-visible {
+  outline-color: $grey-dark;
+}
+a.has-text-grey:focus, a.has-text-grey:focus-visible {
+  outline-color: $grey;
+}
+a.has-text-grey-light:focus, a.has-text-grey-light:focus-visible {
+  outline-color: $grey-light;
+}
+a.has-text-grey-lighter:focus, a.has-text-grey-lighter:focus-visible {
+  outline-color: $grey-lighter;
+}
+a.has-text-white-ter:focus, a.has-text-white-ter:focus-visible {
+  outline-color: $white-ter;
+}
+a.has-text-white-bis:focus, a.has-text-white-bis:focus-visible {
+  outline-color: $white-bis;
+}
+
+a.tag.is-dark.is-rounded:focus-visible
+{
+  outline-offset: 1px;
+  outline: 1px solid $grey;
+}
+a.tag.is-dark.is-rounded:focus:not(:focus-visible)
+{
+  outline: none;
+}
+
+.tabs a:focus-visible {
+  outline-offset: -4px;
+}
+.tabs a:focus:not(:focus-visible)
+{
+  outline: none;
+}
+
+.control.has-icons-right > span.icon:focus-visible,
+.control.has-icons-left > span.icon:focus-visible
+{
+  outline: none;
+  border: 1px solid $input-focus-border-color;
+  box-shadow: $input-focus-box-shadow-size $input-focus-box-shadow-color;
+}
+.control.has-icons-right > span.icon:focus:not(:focus-visible),
+.control.has-icons-left > span.icon:focus:not(:focus-visible)
+{
+  outline: none;
+}
+
+.is-checkradio[type="checkbox"] + label:focus, 
+.is-checkradio[type="checkbox"] + label:focus-visible
+{
+  outline: none;
+  border: none;
+}
+.is-checkradio[type="checkbox"] + label:focus::before, 
+.is-checkradio[type="checkbox"] + label:focus-visible::before
+{
+  outline: none;
+  border: 1px solid $input-focus-border-color;
+  box-shadow: $input-focus-box-shadow-size $input-focus-box-shadow-color;
+}
+.is-checkradio[type="checkbox"] + label::before, 
+.is-checkradio[type="checkbox"] + label::before
+{
+  border-color: $grey;
+}
+
+
 .label {
   color: hsl(0, 0%, 48%);
+}
+
+.is-underscored {
+  border-bottom: 1px solid hsl(0, 0%, 29%);
+  height: 0.6rem;
+  width: 0.6rem;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+  .is-underscored.is-dot {
+    border: none;
+    border-radius: 50%;
+  }
+
+.is-mid-width-field input {
+  width: 50% !important;
+}
+
+.is-half-width-field input {
+  width: 50% !important;
+}
+
+.is-third-width-field input {
+  width: 33% !important;
 }
 
 .is-toggle.buttons,
@@ -437,10 +735,6 @@ footer .field.is-grouped {
     --safe-area-inset-top: constant(safe-area-inset-top);
     padding-top: calc(0.4rem + var(--safe-area-inset-top));
   }
-}
-
-.notification .notification-title {
-  // Style for title line
 }
 
 .notification .notification-content {
@@ -567,6 +861,16 @@ footer .field.is-grouped {
   overflow-wrap: break-word;
 }
 
+.release-flag {
+  height: 0.5rem;
+  width: 0.5rem;
+  display: inline-block;
+  border: none;
+  border-radius: 50%;
+  background-color: $warning;
+  vertical-align: middle;
+  margin: 0 5px;
+}
 
 .fadeInOut-enter-active {
     animation: fadeIn 500ms

@@ -22,7 +22,7 @@ return [
     'Unable_to_decrypt_uri' => 'Unable to decrypt uri',
     'not_a_supported_otp_type' => 'This OTP format is not currently supported',
     'cannot_create_otp_without_secret' => 'Cannot create an OTP without a secret',
-    'data_of_qrcode_is_not_valid_URI' => 'The data of this QR code is not a valid OTP Auth URI:',
+    'data_of_qrcode_is_not_valid_URI' => 'The data of this QR code is not a valid OTP Auth URI. The QR code contains:',
     'wrong_current_password' => 'Wrong current password, nothing has changed',
     'error_during_encryption' => 'Encryption failed, your database remains unprotected.',
     'error_during_decryption' => 'Decryption failed, your database is still protected. This is mainly caused by an integrity issue of encrypted data for one or more accounts.',
@@ -39,7 +39,11 @@ return [
     'user_deletion_failed' => 'User account deletion failed, no data have been deleted',
     'auth_proxy_failed' => 'Proxy authentication failed',
     'auth_proxy_failed_legend' => '2Fauth is configured to run behind an authentication proxy but your proxy does not return the expected header. Check your configuration and try again.',
-    'invalid_google_auth_migration' => 'Invalid or unreadable Google Authenticator data',
+    'invalid_x_migration' => 'Invalid or unreadable :appname data',
+    'invalid_2fa_data' => 'Invalid 2FA data',
+    'unsupported_migration' => 'Data do not match any supported format',
     'unsupported_otp_type' => 'Unsupported OTP type',
-    'no_logo_found_for_x' => 'No logo available for {service}'
+    'encrypted_migration' => 'Unreadable, the data seem encrypted',
+    'no_logo_found_for_x' => 'No logo available for {service}',
+    'file_upload_failed' => 'File upload failed'
 ];

@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use ParagonIE\ConstantTime\Base32;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Http;
+use App\Helpers\Helpers;
 
 class TwoFAccount extends Model implements Sortable
 {
@@ -49,9 +50,10 @@ class TwoFAccount extends Model implements Sortable
     const DEFAULT_DIGITS = 6;
     const DEFAULT_ALGORITHM = self::SHA1;
 
-    private const IMAGELINK_STORAGE_PATH = 'imagesLink/';
-    private const ICON_STORAGE_PATH      = 'public/icons/';
+    const DUPLICATE_ID = -1;
+    const FAKE_ID = -2;
 
+    private const IMAGELINK_STORAGE_PATH = 'imagesLink/';
 
     /**
      * List of OTP types supported by 2FAuth
@@ -151,24 +153,6 @@ class TwoFAccount extends Model implements Sortable
         //     Log::info(sprintf('TwoFAccount #%d deleted', $model->id));
         // });
     }
-
-    /**
-     * Fill the model with an array of attributes.
-     *
-     * @param  array  $attributes
-     * @return $this
-     *
-     * @throws \Illuminate\Database\Eloquent\MassAssignmentException
-     */
-    // public function fill(array $attributes)
-    // {
-    //     parent::fill($attributes);
-
-    //     if ($this->otp_type == self::TOTP && !$this->period) $this->period = self::DEFAULT_PERIOD;
-    //     if ($this->otp_type == self::HOTP && !$this->counter) $this->counter = self::DEFAULT_COUNTER;
-
-    //     return $this;
-    // }
 
 
     /**
@@ -283,7 +267,7 @@ class TwoFAccount extends Model implements Sortable
      */
     public function setAlgorithmAttribute($value)
     {
-        $this->attributes['algorithm'] = !$value ? self::SHA1 : $value;
+        $this->attributes['algorithm'] = !$value ? self::SHA1 : strtolower($value);
     }
 
 
@@ -307,7 +291,7 @@ class TwoFAccount extends Model implements Sortable
      */
     public function setCounterAttribute($value)
     {
-        $this->attributes['counter'] = is_null($value) && $this->otp_type === self::HOTP ? self::DEFAULT_COUNTER : $value;
+        $this->attributes['counter'] = blank($value) && $this->otp_type === self::HOTP ? self::DEFAULT_COUNTER : $value;
     }
 
 
@@ -316,6 +300,8 @@ class TwoFAccount extends Model implements Sortable
      * 
      * @throws InvalidSecretException The secret is not a valid base32 encoded string
      * @throws UndecipherableException The secret cannot be deciphered
+     * @throws UnsupportedOtpTypeException The defined OTP type is not supported
+     * @throws InvalidOtpParameterException One OTP parameter is invalid
      * @return TotpDto|HotpDto 
      */
     public function getOTP()
@@ -332,7 +318,20 @@ class TwoFAccount extends Model implements Sortable
         $this->initGenerator();
         
         try {
-            if ( $this->otp_type === self::TOTP || $this->otp_type === self::STEAM_TOTP ) {
+            if ( $this->otp_type === self::HOTP ) {
+
+                $OtpDto = new HotpDto();
+                $OtpDto->otp_type   = $this->otp_type;
+                $counter = $this->generator->getParameter('counter');
+                $OtpDto->password   = $this->generator->at($counter);
+                $OtpDto->counter    = $this->counter = $counter + 1;
+
+                // The updated HOTP counter must be saved to db for persisted account only
+                if ($this->id) {
+                    $this->save();
+                }
+            }
+            else {
 
                 $OtpDto = new TotpDto();
                 $OtpDto->otp_type   = $this->otp_type;
@@ -341,15 +340,6 @@ class TwoFAccount extends Model implements Sortable
                                             ? $this->generator->at($OtpDto->generated_at)
                                             : SteamTotp::getAuthCode(base64_encode(Base32::decodeUpper($this->secret)));
                 $OtpDto->period         = $this->period;
-            }
-            else if ( $this->otp_type === self::HOTP ) {
-
-                $OtpDto = new HotpDto();
-                $OtpDto->otp_type   = $this->otp_type;
-                $counter = $this->generator->getCounter();
-                $OtpDto->password   = $this->generator->at($counter);
-                $OtpDto->counter    = $this->counter = $counter + 1;
-
             }
 
             Log::info(sprintf('New OTP generated for TwoFAccount (%s)', $this->id ? 'id:'.$this->id: 'preview'));
@@ -375,17 +365,21 @@ class TwoFAccount extends Model implements Sortable
      */
     public function fillWithOtpParameters(array $parameters, bool $skipIconFetching = false)
     {
-        $this->otp_type     = Arr::get($parameters, 'otp_type');
+        $this->otp_type     = strtolower(Arr::get($parameters, 'otp_type'));
         $this->account      = Arr::get($parameters, 'account');
         $this->service      = Arr::get($parameters, 'service');
         $this->icon         = Arr::get($parameters, 'icon');
         $this->secret       = Arr::get($parameters, 'secret');
-        $this->algorithm    = Arr::get($parameters, 'algorithm', self::SHA1);
+        $this->algorithm    = strtolower(Arr::get($parameters, 'algorithm', self::SHA1));
         $this->digits       = Arr::get($parameters, 'digits', self::DEFAULT_DIGITS);
         $this->period       = Arr::get($parameters, 'period', $this->otp_type == self::TOTP ? self::DEFAULT_PERIOD : null);
         $this->counter      = Arr::get($parameters, 'counter', $this->otp_type == self::HOTP ? self::DEFAULT_COUNTER : null);
 
         $this->initGenerator();
+
+        // The generator could have been initialized without a secret, in that case it generates one on the fly.
+        // The secret attribute has thus to be updated
+        $this->secret = $this->secret ?: $this->generator->getSecret();
         
         if ($this->otp_type === self::STEAM_TOTP || strtolower($this->service) === 'steam') {
             $this->enforceAsSteam();
@@ -475,11 +469,14 @@ class TwoFAccount extends Model implements Sortable
 
     /**
      * Returns the OTP type of the instanciated OTP generator
+     * 
+     * @return mixed
      */
     private function getGeneratorOtpType()
     {
         return Arr::get($this->generatorClassMap, get_class($this->generator));
     }
+
 
     /**
      * Returns an otpauth URI built with model attribute values
@@ -494,6 +491,8 @@ class TwoFAccount extends Model implements Sortable
 
     /**
      * Instanciates the OTP generator with model attribute values
+     * @throws UnsupportedOtpTypeException The defined OTP type is not supported
+     * @throws InvalidOtpParameterException One OTP parameter is invalid
      */
     private function initGenerator() : void
     {
@@ -546,7 +545,7 @@ class TwoFAccount extends Model implements Sortable
     {
         try {
             $path_parts = pathinfo($url);
-            $newFilename = Str::random(40).'.'.$path_parts['extension'];
+            $newFilename = Helpers::getUniqueFilename($path_parts['extension']);  //Str::random(40).'.'.$path_parts['extension'];
             $imageFile = self::IMAGELINK_STORAGE_PATH . $newFilename;
 
             try {
@@ -604,7 +603,7 @@ class TwoFAccount extends Model implements Sortable
     /**
      * Returns an acceptable value
      */
-    private function decryptOrReturn($value)
+    private function decryptOrReturn(mixed $value) : mixed
     {
         // Decipher when needed
         if ( Settings::get('useEncryption') && $value )
@@ -625,7 +624,7 @@ class TwoFAccount extends Model implements Sortable
     /**
      * Encrypt a value
      */
-    private function encryptOrReturn($value)
+    private function encryptOrReturn(mixed $value) : mixed
     {
         // should be replaced by laravel 8 attribute encryption casting
         return Settings::get('useEncryption') ? Crypt::encryptString($value) : $value;

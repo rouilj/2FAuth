@@ -2,14 +2,12 @@
     <form-wrapper :title="$t('groups.forms.new_group')">
         <form @submit.prevent="createGroup" @keydown="form.onKeydown($event)">
             <form-field :form="form" fieldName="name" inputType="text" :label="$t('commons.name')" autofocus />
-            <div class="field is-grouped">
-                <div class="control">
-                    <v-button>{{ $t('commons.create') }}</v-button>
-                </div>
-                <div class="control">
-                    <button type="button" class="button is-text" @click="cancelCreation">{{ $t('commons.cancel') }}</button>
-                </div>
-            </div>
+            <form-buttons
+                :submitId="'btnCreateGroup'"
+                :isBusy="form.isBusy"
+                :caption="$t('commons.create')"
+                :showCancelButton="true"
+                cancelLandingView="groups" />
         </form>
     </form-wrapper>
 </template>
@@ -34,14 +32,10 @@
                 await this.form.post('/api/v1/groups')
 
                 if( this.form.errors.any() === false ) {
+                    this.$notify({ type: 'is-success', text: this.$t('groups.group_successfully_created') })
                     this.$router.push({ name: 'groups' });
                 }
 
-            },
-
-            cancelCreation: function() {
-
-                this.$router.push({ name: 'groups' });
             },
             
         },

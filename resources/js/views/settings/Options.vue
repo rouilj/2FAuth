@@ -6,16 +6,24 @@
                 <!-- <form @submit.prevent="handleSubmit" @change="handleSubmit" @keydown="form.onKeydown($event)"> -->
                 <form>
                     <h4 class="title is-4 has-text-grey-light">{{ $t('settings.general') }}</h4>
+                    <!-- Check for update -->
+                    <form-checkbox v-on:checkForUpdate="saveSetting('checkForUpdate', $event)" :form="form" fieldName="checkForUpdate" :label="$t('commons.check_for_update')" :help="$t('commons.check_for_update_help')" />
+                    <version-checker></version-checker>
                     <!-- Language -->
                     <form-select v-on:lang="saveSetting('lang', $event)" :options="langs" :form="form" fieldName="lang" :label="$t('settings.forms.language.label')" :help="$t('settings.forms.language.help')" />
-                    <div class="field help">{{ $t('settings.forms.some_translation_are_missing') }}<a class="ml-2" href="https://crowdin.com/project/2fauth">{{ $t('settings.forms.help_translate_2fauth') }}</a></div>
+                    <div class="field help">
+                        {{ $t('settings.forms.some_translation_are_missing') }}
+                        <a class="ml-2" href="https://crowdin.com/project/2fauth">
+                            {{ $t('settings.forms.help_translate_2fauth') }}
+                            <font-awesome-icon :icon="['fas', 'external-link-alt']" />
+                        </a>
+                    </div>
                     <!-- display mode -->
                     <form-toggle v-on:displayMode="saveSetting('displayMode', $event)" :choices="layouts" :form="form" fieldName="displayMode" :label="$t('settings.forms.display_mode.label')" :help="$t('settings.forms.display_mode.help')" />
                     <!-- show icon -->
                     <form-checkbox v-on:showAccountsIcons="saveSetting('showAccountsIcons', $event)" :form="form" fieldName="showAccountsIcons" :label="$t('settings.forms.show_accounts_icons.label')" :help="$t('settings.forms.show_accounts_icons.help')" />
                     <!-- Official icons -->
                     <form-checkbox v-on:getOfficialIcons="saveSetting('getOfficialIcons', $event)" :form="form" fieldName="getOfficialIcons" :label="$t('settings.forms.get_official_icons.label')" :help="$t('settings.forms.get_official_icons.help')" />
-
 
                     <h4 class="title is-4 pt-4 has-text-grey-light">{{ $t('groups.groups') }}</h4>
                     <!-- default group -->
@@ -32,6 +40,8 @@
                     <form-checkbox v-on:showOtpAsDot="saveSetting('showOtpAsDot', $event)" :form="form" fieldName="showOtpAsDot" :label="$t('settings.forms.show_otp_as_dot.label')" :help="$t('settings.forms.show_otp_as_dot.help')" />
                     <!-- close otp on copy -->
                     <form-checkbox v-on:closeOtpOnCopy="saveSetting('closeOtpOnCopy', $event)" :form="form" fieldName="closeOtpOnCopy" :label="$t('settings.forms.close_otp_on_copy.label')" :help="$t('settings.forms.close_otp_on_copy.help')" />
+                    <!-- copy otp on get -->
+                    <form-checkbox v-on:copyOtpOnDisplay="saveSetting('copyOtpOnDisplay', $event)" :form="form" fieldName="copyOtpOnDisplay" :label="$t('settings.forms.copy_otp_on_display.label')" :help="$t('settings.forms.copy_otp_on_display.help')" />
 
                     <h4 class="title is-4 pt-4 has-text-grey-light">{{ $t('settings.data_input') }}</h4>
                     <!-- basic qrcode -->
@@ -46,9 +56,9 @@
         <vue-footer :showButtons="true">
             <!-- Cancel button -->
             <p class="control">
-                <a class="button is-dark is-rounded" @click.stop="exitSettings">
+                <button class="button is-dark is-rounded" @click.stop="exitSettings">
                     {{ $t('commons.close') }}
-                </a>
+                </button>
             </p>
         </vue-footer>
     </div>
@@ -73,6 +83,7 @@
      */
 
     import Form from './../../components/Form'
+    import VersionChecker from './../../components/VersionChecker'
 
     export default {
         data(){
@@ -81,6 +92,7 @@
                     lang: 'browser',
                     showOtpAsDot: null,
                     closeOtpOnCopy: null,
+                    copyOtpOnDisplay: null,
                     useBasicQrcodeReader: null,
                     showAccountsIcons: null,
                     displayMode: '',
@@ -91,6 +103,7 @@
                     defaultCaptureMode: '',
                     rememberActiveGroup: true,
                     getOfficialIcons: null,
+                    checkForUpdate: null,
                 }),
                 layouts: [
                     { text: this.$t('settings.forms.grid'), value: 'grid', icon: 'th' },
@@ -117,6 +130,10 @@
                     { text: this.$t('settings.forms.advanced_form'), value: 'advancedForm' },
                 ],
             }
+        },
+
+        components: {
+            VersionChecker,
         },
 
         computed : {

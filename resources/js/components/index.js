@@ -4,6 +4,7 @@ import Button           from './Button'
 import FieldError       from './FieldError'
 import FormWrapper      from './FormWrapper'
 import FormField        from './FormField'
+import FormPasswordField        from './FormPasswordField'
 import FormSelect       from './FormSelect'
 import FormSwitch       from './FormSwitch'
 import FormToggle       from './FormToggle'
@@ -12,6 +13,7 @@ import FormButtons      from './FormButtons'
 import VueFooter        from './Footer'
 import Kicker           from './Kicker'
 import SettingTabs      from './SettingTabs'
+import ResponsiveWidthWrapper from './ResponsiveWidthWrapper'
 
 // Components that are registered globaly.
 [
@@ -20,6 +22,7 @@ import SettingTabs      from './SettingTabs'
     FieldError,
     FormWrapper,
     FormField,
+    FormPasswordField,
     FormSelect,
     FormSwitch,
     FormToggle,
@@ -27,7 +30,8 @@ import SettingTabs      from './SettingTabs'
     FormButtons,
     VueFooter,
     Kicker,
-    SettingTabs
+    SettingTabs,
+    ResponsiveWidthWrapper
 ].forEach(Component => {
 	Vue.component(Component.name, Component)
 })
