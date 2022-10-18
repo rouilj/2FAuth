@@ -92,8 +92,7 @@ class Handler extends ExceptionHandler
                     'message' => $exception->getMessage()], 407);
             }
             else {
-                Log::debug($request->fullUrl());
-                Log::debug($exception->getTraceAsString());
+                Log::debug($exception->getMessage());
                 return response()->json([
                     'message' => $exception->getMessage()], 401);
             }
