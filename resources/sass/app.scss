@@ -515,7 +515,9 @@ figure.no-icon {
 
 button.is-double-focused:focus-visible
 {
-  outline-width: 4px !important;
+  outline-style: double !important;
+  outline-width: 6px !important;
+  border-radius: $radius-rounded;
 }
 button.is-double-focused:focus:not(:focus-visible)
 {
