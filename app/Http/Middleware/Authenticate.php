@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
-use Illuminate\Support\Facades\Log;
 
 class Authenticate extends Middleware
 {
@@ -32,16 +31,10 @@ class Authenticate extends Middleware
         }
 
         foreach ($guards as $guard) {
-            Log::debug(sprintf('%s requested', $request->fullUrl()));
-            Log::debug(sprintf('laravel_token: %s', $request->cookie('laravel_token')));
-            Log::debug(sprintf('XSRF-TOKEN: %s', $request->cookie('XSRF-TOKEN')));
-            Log::debug(sprintf('Try to authenticated against %s guard', $guard));
             if ($this->auth->guard($guard)->check()) {
-                Log::debug(sprintf('Authenticated against %s guard', $guard));
                 $this->auth->shouldUse($guard);
                 return;
             }
-            Log::debug(sprintf('Fail to authenticate against %s guard', $guard));
         }
 
         $this->unauthenticated($request, $guards);

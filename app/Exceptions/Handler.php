@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Support\Facades\Log;
 
 class Handler extends ExceptionHandler
 {
@@ -91,6 +92,7 @@ class Handler extends ExceptionHandler
                     'message' => $exception->getMessage()], 407);
             }
             else {
+                Log::debug($exception->getMessage());
                 return response()->json([
                     'message' => $exception->getMessage()], 401);
             }
