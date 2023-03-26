@@ -2,73 +2,45 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Facades\Settings;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Http\Requests\WebauthnRenameRequest;
-use DarkGhostHunter\Larapass\Eloquent\WebAuthnCredential;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class WebAuthnManageController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | WebAuthn Manage Controller
-    |--------------------------------------------------------------------------
-    |
-    |
-    */
-
-    /**
-     * Create a new controller instance.
-     */
-    public function __construct()
-    {
-    }
-    
-
     /**
      * List all WebAuthn registered credentials
-     * 
+     *
      * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-        $allUserCredentials = $user->webAuthnCredentials()
-                                    ->enabled()
-                                    ->get()
-                                    ->all();
+        $allUserCredentials = $request->user()->webAuthnCredentials()->WhereEnabled()->get();
 
         return response()->json($allUserCredentials, 200);
     }
 
-
     /**
-     * Rename a WebAuthn device
-     * 
-     * @param \App\Http\Requests\WebauthnRenameRequest $request
+     * Rename a WebAuthn credential
+     *
      * @return \Illuminate\Http\JsonResponse
      */
     public function rename(WebauthnRenameRequest $request, string $credential)
     {
         $validated = $request->validated();
 
-        $webAuthnCredential = WebAuthnCredential::where('id', $credential)->firstOrFail();
-        $webAuthnCredential->name = $validated['name']; // @phpstan-ignore-line
-        $webAuthnCredential->save();
+        abort_if(! $request->user()->renameCredential($credential, $validated['name']), 404);
 
         return response()->json([
-            'name' => $webAuthnCredential->name,
+            'name' => $validated['name'],
         ], 200);
     }
 
     /**
      * Remove the specified credential from storage.
-     * 
-     * @param  \Illuminate\Http\Request  $request
-     * @param  string|array  $credential
      *
+     * @param  string|array  $credential
      * @return \Illuminate\Http\JsonResponse
      */
     public function delete(Request $request, $credential)
@@ -76,16 +48,18 @@ class WebAuthnManageController extends Controller
         Log::info('Deletion of security device requested');
 
         $user = $request->user();
-        $user->removeCredential($credential);
+        $user->flushCredential($credential);
 
-        // Webauthn user options should be reset to prevent impossible login
+        // Webauthn user options need to be reset to prevent impossible login when
+        // no more registered device exists.
         // See #110
-        if (blank($user->allCredentialDescriptors())) {
-            Settings::delete('useWebauthnAsDefault');
-            Settings::delete('useWebauthnOnly');
+        if (blank($user->webAuthnCredentials()->WhereEnabled()->get())) {
+            $request->user()->preferences['useWebauthnOnly'] = false;
+            $request->user()->save();
+            Log::notice(sprintf('No more Webauthn credential for user ID #%s, user Webauthn options reset to default', $user->id));
         }
 
-        Log::info('Security device deleted');
+        Log::info(sprintf('User ID #%s revoked a security device', $user->id));
 
         return response()->json(null, 204);
     }

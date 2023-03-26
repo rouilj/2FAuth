@@ -4,26 +4,28 @@ namespace Tests\Api\v1\Requests;
 
 use App\Api\v1\Requests\SettingUpdateRequest;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
 
+/**
+ * @covers \App\Api\v1\Requests\SettingUpdateRequest
+ */
 class SettingUpdateRequestTest extends TestCase
 {
-
     use WithoutMiddleware;
 
     /**
      * @test
      */
     public function test_user_is_authorized()
-    {   
+    {
         Auth::shouldReceive('check')
-        ->once()
-        ->andReturn(true);
+            ->once()
+            ->andReturn(true);
 
         $request = new SettingUpdateRequest();
-    
+
         $this->assertTrue($request->authorize());
     }
 
@@ -32,7 +34,7 @@ class SettingUpdateRequestTest extends TestCase
      */
     public function test_valid_data(array $data) : void
     {
-        $request = new SettingUpdateRequest();
+        $request   = new SettingUpdateRequest();
         $validator = Validator::make($data, $request->rules());
 
         $this->assertFalse($validator->fails());
@@ -45,13 +47,13 @@ class SettingUpdateRequestTest extends TestCase
     {
         return [
             [[
-                'value' => true
+                'value' => true,
             ]],
             [[
-                'value' => 'MyValue'
+                'value' => 'MyValue',
             ]],
             [[
-                'value' => 10
+                'value' => 10,
             ]],
         ];
     }
@@ -61,7 +63,7 @@ class SettingUpdateRequestTest extends TestCase
      */
     public function test_invalid_data(array $data) : void
     {
-        $request = new SettingUpdateRequest();
+        $request   = new SettingUpdateRequest();
         $validator = Validator::make($data, $request->rules());
 
         $this->assertTrue($validator->fails());
@@ -74,12 +76,11 @@ class SettingUpdateRequestTest extends TestCase
     {
         return [
             [[
-                'value' => '' // required
+                'value' => '', // required
             ]],
             [[
-                'value' => null // required
+                'value' => null, // required
             ]],
         ];
     }
-
 }

@@ -4,8 +4,10 @@ namespace Database\Factories;
 
 use ParagonIE\ConstantTime\Base32;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\TwoFAccount>
+ */
 class TwoFAccountFactory extends Factory
 {
     /**
@@ -16,10 +18,11 @@ class TwoFAccountFactory extends Factory
     public function definition()
     {
         $account = $this->faker->safeEmail();
-        $service = $this->faker->unique()->domainName();
+        $service = $this->faker->domainName();
         $secret = Base32::encodeUpper($this->faker->regexify('[A-Z0-9]{8}'));
     
         return [
+            'group_id' => null,
             'otp_type' => 'totp',
             'account' => $account,
             'service' => $service,

@@ -5,6 +5,13 @@
 
     RewriteEngine On
 
+    # Uncomment and set the RewriteBase path to the desired subdirectory if you want to
+    # serve 2FAuth from a domain subdirectory like https://mydomain/2fauth/
+    #
+    # WARNING: the subdirectory value must match the one set in your .env file
+    # Do not forget leading and trailing slashes.
+    #RewriteBase /subdir/
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -14,7 +21,7 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
-    # Handle Front Controller...
+    # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]

@@ -2,19 +2,20 @@
 
 namespace Tests\Unit;
 
-use App\Models\TwoFAccount;
 use App\Events\TwoFAccountDeleted;
-use Tests\ModelTestCase;
+use App\Helpers\Helpers;
+use App\Models\TwoFAccount;
+use App\Services\SettingService;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Crypt;
 use Mockery\MockInterface;
-use App\Services\SettingService;
+use Tests\ModelTestCase;
 
 /**
  * @covers \App\Models\TwoFAccount
  */
 class TwoFAccountModelTest extends ModelTestCase
 {
-
     /**
      * @test
      */
@@ -26,7 +27,7 @@ class TwoFAccountModelTest extends ModelTestCase
             [],
             ['*'],
             [],
-            ['id' => 'int'],
+            ['id'      => 'int'],
             ['deleted' => TwoFAccountDeleted::class],
             ['created_at', 'updated_at'],
             \Illuminate\Database\Eloquent\Collection::class,
@@ -36,10 +37,9 @@ class TwoFAccountModelTest extends ModelTestCase
         );
     }
 
-
     /**
      * @test
-     * 
+     *
      * @dataProvider provideSensitiveAttributes
      */
     public function test_sensitive_attributes_are_stored_encrypted(string $attribute)
@@ -51,10 +51,10 @@ class TwoFAccountModelTest extends ModelTestCase
         });
 
         $twofaccount = TwoFAccount::factory()->make([
-            $attribute => 'string',
+            $attribute => 'STRING==',
         ]);
 
-        $this->assertEquals('string', Crypt::decryptString($twofaccount->getAttributes()[$attribute]));
+        $this->assertEquals('STRING==', Crypt::decryptString($twofaccount->getAttributes()[$attribute]));
     }
 
     /**
@@ -64,20 +64,20 @@ class TwoFAccountModelTest extends ModelTestCase
     {
         return [
             [
-                'legacy_uri'
+                'legacy_uri',
             ],
             [
-                'secret'
+                'secret',
             ],
             [
-                'account'
+                'account',
             ],
         ];
     }
 
     /**
      * @test
-     * 
+     *
      * @dataProvider provideSensitiveAttributes
      */
     public function test_sensitive_attributes_are_returned_clear(string $attribute)
@@ -93,10 +93,9 @@ class TwoFAccountModelTest extends ModelTestCase
         $this->assertEquals($twofaccount->getAttributes()[$attribute], $twofaccount->$attribute);
     }
 
-
     /**
      * @test
-     * 
+     *
      * @dataProvider provideSensitiveAttributes
      */
     public function test_indecipherable_attributes_returns_masked_value(string $attribute)
@@ -113,5 +112,44 @@ class TwoFAccountModelTest extends ModelTestCase
         $twofaccount = TwoFAccount::factory()->make();
 
         $this->assertEquals(__('errors.indecipherable'), $twofaccount->$attribute);
+    }
+
+    /**
+     * @test
+     *
+     * @runInSeparateProcess
+     *
+     * @preserveGlobalState disabled
+     */
+    public function test_secret_is_uppercased_and_padded_at_setup()
+    {
+        $settingService = $this->mock(SettingService::class, function (MockInterface $settingService) {
+            $settingService->shouldReceive('get')
+                ->with('useEncryption')
+                ->andReturn(false);
+        });
+
+        $helpers = $this->mock('alias:' . Helpers::class, function (MockInterface $helpers) {
+            $helpers->shouldReceive('PadToBase32Format')
+                ->andReturn('YYYY====');
+        });
+
+        $twofaccount = TwoFAccount::factory()->make([
+            'secret' => 'yyyy',
+        ]);
+
+        $this->assertEquals('YYYY====', $twofaccount->secret);
+    }
+
+    /**
+     * @test
+     */
+    public function test_user_relation()
+    {
+        $model    = new TwoFAccount();
+        $relation = $model->user();
+
+        $this->assertInstanceOf(BelongsTo::class, $relation);
+        $this->assertEquals('user_id', $relation->getForeignKeyName());
     }
 }

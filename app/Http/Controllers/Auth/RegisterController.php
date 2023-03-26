@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Models\User;
-use App\Http\Requests\UserStoreRequest;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\UserStoreRequest;
+use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class RegisterController extends Controller
@@ -25,42 +25,46 @@ class RegisterController extends Controller
 
     use RegistersUsers;
 
-
     /**
      * Handle a registration request for the application.
      *
-     * @param  \App\Http\Requests\UserStoreRequest  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function register(UserStoreRequest $request)
     {
         $validated = $request->validated();
+
         event(new Registered($user = $this->create($validated)));
-        Log::info('User created');
 
         $this->guard()->login($user);
-        // $this->guard()->loginUsingId($user->id);
-        // Auth::guard('admin')->attempt($credentials);
 
         return response()->json([
             'message' => 'account created',
-            'name' => $user->name,
+            'name'    => $user->name,
         ], 201);
     }
-
 
     /**
      * Create a new user instance after a valid registration.
      *
-     * @param  array  $data
      * @return \App\Models\User
      */
     protected function create(array $data)
     {
-        return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
+        $user = User::create([
+            'name'     => $data['name'],
+            'email'    => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+
+        Log::info(sprintf('User ID #%s created', $user->id));
+
+        if (User::count() == 1) {
+            $user->is_admin = true;
+            $user->save();
+            Log::notice(sprintf('User ID #%s set as administrator', $user->id));
+        }
+
+        return $user;
     }
 }

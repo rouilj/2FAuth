@@ -65,8 +65,8 @@
                 <label class="label">{{ $t('twofaccounts.icon') }}</label>
                 <div class="field is-grouped">
                     <!-- i'm lucky button -->
-                    <div class="control" v-if="$root.appSettings.getOfficialIcons">
-                        <v-button @click="fetchLogo" :color="'is-dark'" :nativeType="'button'" :isDisabled="form.service.length < 1">
+                    <div class="control" v-if="$root.userPreferences.getOfficialIcons">
+                        <v-button @click="fetchLogo" :color="$root.showDarkMode ? 'is-dark' : ''" :nativeType="'button'" :isDisabled="form.service.length < 1">
                             <span class="icon is-small">
                                 <font-awesome-icon :icon="['fas', 'globe']" />
                             </span>
@@ -75,7 +75,7 @@
                     </div>
                     <!-- upload button -->
                     <div class="control">
-                        <div role="button" tabindex="0" class="file is-dark" @keyup.enter="$refs.iconInputLabel.click()">
+                        <div role="button" tabindex="0" class="file" :class="$root.showDarkMode ? 'is-dark' : 'is-white'" @keyup.enter="$refs.iconInputLabel.click()">
                             <label class="file-label" ref="iconInputLabel">
                                 <input aria-hidden="true" tabindex="-1" class="file-input" type="file" accept="image/*" v-on:change="uploadIcon" ref="iconInput">
                                 <span class="file-cta">
@@ -85,8 +85,8 @@
                                     <span class="file-label">{{ $t('twofaccounts.forms.choose_image') }}</span>
                                 </span>
                             </label>
-                            <span class="tag is-black is-large" v-if="tempIcon">
-                                <img class="icon-preview" :src="'/storage/icons/' + tempIcon" :alt="$t('twofaccounts.icon_to_illustrate_the_account')">
+                            <span class="tag is-large" :class="$root.showDarkMode ? 'is-dark' : 'is-white'" v-if="tempIcon">
+                                <img class="icon-preview" :src="$root.appConfig.subdirectory + '/storage/icons/' + tempIcon" :alt="$t('twofaccounts.icon_to_illustrate_the_account')">
                                 <button class="clear-selection delete is-small" @click.prevent="deleteIcon" :aria-label="$t('twofaccounts.remove_icon')"></button>
                             </span>
                         </div>
@@ -94,21 +94,14 @@
                 </div>
                 <div class="field">
                     <field-error :form="form" field="icon" class="help-for-file" />
-                    <p v-if="$root.appSettings.getOfficialIcons" class="help" v-html="$t('twofaccounts.forms.i_m_lucky_legend')"></p>
+                    <p v-if="$root.userPreferences.getOfficialIcons" class="help" v-html="$t('twofaccounts.forms.i_m_lucky_legend')"></p>
                 </div>
                 <!-- otp type -->
                 <form-toggle class="has-uppercased-button" :form="form" :choices="otp_types" fieldName="otp_type" :label="$t('twofaccounts.forms.otp_type.label')" :help="$t('twofaccounts.forms.otp_type.help')" :hasOffset="true" />
                 <div v-if="form.otp_type">
                     <!-- secret -->
                     <label :for="this.inputId('text','secret')" class="label" v-html="$t('twofaccounts.forms.secret.label')"></label>
-                    <div class="field has-addons">
-                        <p class="control">
-                            <span class="select">
-                                <select @change="form.secret=''" v-model="secretIsBase32Encoded">
-                                    <option v-for="(format) in secretFormats" :key="format.value" :value="format.value">{{ format.text }}</option>
-                                </select>
-                            </span>
-                        </p>
+                    <div class="field">
                         <p class="control is-expanded">
                             <input :id="this.inputId('text','secret')" class="input" type="text" v-model="form.secret">
                         </p>
@@ -127,9 +120,9 @@
                         <!-- algorithm -->
                         <form-toggle :form="form" :choices="algorithms" fieldName="algorithm" :label="$t('twofaccounts.forms.algorithm.label')" :help="$t('twofaccounts.forms.algorithm.help')" />
                         <!-- TOTP period -->
-                        <form-field v-if="form.otp_type === 'totp'" pattern="[0-9]" :class="'is-third-width-field'" :form="form" fieldName="period" inputType="text" :label="$t('twofaccounts.forms.period.label')" :placeholder="$t('twofaccounts.forms.period.placeholder')" :help="$t('twofaccounts.forms.period.help')" />
+                        <form-field v-if="form.otp_type === 'totp'" pattern="[0-9]{1,4}" :class="'is-third-width-field'" :form="form" fieldName="period" inputType="text" :label="$t('twofaccounts.forms.period.label')" :placeholder="$t('twofaccounts.forms.period.placeholder')" :help="$t('twofaccounts.forms.period.help')" />
                         <!-- HOTP counter -->
-                        <form-field v-if="form.otp_type === 'hotp'" pattern="[0-9]" :class="'is-third-width-field'" :form="form" fieldName="counter" inputType="text" :label="$t('twofaccounts.forms.counter.label')" :placeholder="$t('twofaccounts.forms.counter.placeholder')" :help="$t('twofaccounts.forms.counter.help')" />
+                        <form-field v-if="form.otp_type === 'hotp'" pattern="[0-9]{1,4}" :class="'is-third-width-field'" :form="form" fieldName="counter" inputType="text" :label="$t('twofaccounts.forms.counter.label')" :placeholder="$t('twofaccounts.forms.counter.placeholder')" :help="$t('twofaccounts.forms.counter.help')" />
                     </div>
                 </div>
                 <vue-footer :showButtons="true">
@@ -146,7 +139,7 @@
             </form>
             <!-- modal -->
             <modal v-model="ShowTwofaccountInModal">
-                <otp-displayer ref="AdvancedFormOtpDisplayer" v-bind="otpdisplayerData" @increment-hotp="incrementHotp" @validation-error="mapDisplayerErrors">
+                <otp-displayer ref="AdvancedFormOtpDisplayer" v-bind="form.data()" @increment-hotp="incrementHotp" @validation-error="mapDisplayerErrors">
                 </otp-displayer>
             </modal>
         </form-wrapper>
@@ -156,7 +149,7 @@
             <div class="block">
                 {{ $t('errors.data_of_qrcode_is_not_valid_URI') }}
             </div>
-            <div class="block has-text-light mb-6" v-html="uri"></div>
+            <div class="block mb-6" :class="$root.showDarkMode ? 'has-text-light':'has-text-grey-dark'" v-html="uri"></div>
             <!-- Copy to clipboard -->
             <div class="block has-text-link">
                 <button class="button is-link is-outlined is-rounded" v-clipboard="() => uri" v-clipboard:success="clipboardSuccessHandler">
@@ -198,7 +191,6 @@
     import Modal from '../../components/Modal'
     import Form from './../../components/Form'
     import OtpDisplayer from '../../components/OtpDisplayer'
-    import Base32 from "hi-base32"
 
     export default {
         data() {
@@ -209,7 +201,6 @@
                 showAlternatives : false,
                 tempIcon: '',
                 uri: '',
-                secretIsBase32Encoded: 0,
                 form: new Form({
                     service: '',
                     account: '',
@@ -235,10 +226,6 @@
                     { text: 9, value: 9 },
                     { text: 10, value: 10 },
                 ],
-                secretFormats: [
-                    { text: this.$t('twofaccounts.forms.plain_text'), value: 0 },
-                    { text: 'Base32', value: 1 }
-                ],
                 algorithms: [
                     { text: 'sha1', value: 'sha1' },
                     { text: 'sha256', value: 'sha256' },
@@ -260,17 +247,6 @@
             },
         },
 
-        computed: {
-            otpdisplayerData: function() {
-                let o = this.form.data()
-                o.secret = this.secretIsBase32Encoded
-                    ? o.secret
-                    : Base32.encode(o.secret).toString();
-
-                    return o
-            }
-        },
-
         mounted: function () {
             if( this.$route.params.decodedUri ) {
                 this.uri = this.$route.params.decodedUri
@@ -279,7 +255,6 @@
                 this.axios.post('/api/v1/twofaccounts/preview', { uri: this.uri }).then(response => {
 
                     this.form.fill(response.data)
-                    this.secretIsBase32Encoded = 1
                     this.tempIcon = response.data.icon ? response.data.icon : null
                     this.showQuickForm = true
                 })
@@ -314,9 +289,6 @@
             async createAccount() {
                 // set current temp icon as account icon
                 this.form.icon = this.tempIcon
-
-                // Secret to base32 if necessary
-                this.form.secret = this.secretIsBase32Encoded ? this.form.secret : Base32.encode(this.form.secret).toString();
 
                 await this.form.post('/api/v1/twofaccounts')
 
@@ -359,7 +331,6 @@
                     // Then the otp described by the uri
                     this.axios.post('/api/v1/twofaccounts/preview', { uri: this.uri }).then(response => {
                         this.form.fill(response.data)
-                        this.secretIsBase32Encoded = 1
                         this.tempIcon = response.data.icon ? response.data.icon : null
                     })
                     .catch(error => {
@@ -394,7 +365,7 @@
             },
 
             fetchLogo() {
-                if (this.$root.appSettings.getOfficialIcons) {
+                if (this.$root.userPreferences.getOfficialIcons) {
                     this.axios.post('/api/v1/icons/default', {service: this.form.service}, {returnError: true}).then(response => {
                         if (response.status === 201) {
                             // clean possible already uploaded temp icon
@@ -426,7 +397,7 @@
 
             clipboardSuccessHandler ({ value, event }) {
 
-                if(this.$root.appSettings.kickUserAfter == -1) {
+                if(this.$root.appSettings.userPreferences == -1) {
                     this.appLogout()
                 }
 
@@ -441,9 +412,7 @@
                 this.form.otp_type = to
 
                 if (to === 'steamtotp') {
-                    this.secretIsBase32Encoded = 1
                     this.form.service = 'Steam'
-                    this.form.secret = ''
                     this.fetchLogo()
                 }
                 else if (from === 'steamtotp') {

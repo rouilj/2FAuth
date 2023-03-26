@@ -2,19 +2,17 @@
 
 namespace App\Api\v1\Controllers;
 
+use App\Http\Controllers\Controller;
+use App\Models\TwoFAccount;
+use App\Services\LogoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Controllers\Controller;
-use App\Services\LogoService;
-use Illuminate\Support\Facades\App;
-
 
 class IconController extends Controller
 {
     /**
      * Handle uploaded icon image
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function upload(Request $request)
@@ -31,37 +29,37 @@ class IconController extends Controller
                 : response()->json(['message' => __('errors.file_upload_failed')], 500);
     }
 
-
     /**
      * Fetch a logo
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function fetch(Request $request)
+    public function fetch(Request $request, LogoService $logoService)
     {
         $this->validate($request, [
             'service' => 'string|regex:/^[^:]+$/i',
         ]);
-        
-        $logoService = App::make(LogoService::class);
+
         $icon = $logoService->getIcon($request->service);
 
         return $icon
             ? response()->json(['filename' => $icon], 201)
             : response()->json(null, 204);
     }
-    
 
     /**
      * delete an icon
      *
-     * @param  string $icon
      * @return \Illuminate\Http\JsonResponse
      */
-    public function delete(string $icon)
+    public function delete(string $icon, Request $request)
     {
-        Storage::disk('icons')->delete($icon); 
+        // An icon affected to someone else's twofaccount cannot be deleted
+        if ($icon && TwoFAccount::where('icon', $icon)->where('user_id', '<>', $request->user()->id)->count() > 0) {
+            abort(403, 'unauthorized');
+        }
+
+        Storage::disk('icons')->delete($icon);
 
         return response()->json(null, 204);
     }

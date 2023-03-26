@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class CheckDbConnection extends Command
 {
@@ -34,8 +33,6 @@ class CheckDbConnection extends Command
 
     /**
      * Execute the console command.
-     *
-     * @return int
      */
     public function handle() : int
     {
@@ -44,6 +41,7 @@ class CheckDbConnection extends Command
         try {
             DB::connection()->getPDO();
             $this->line(DB::connection()->getDatabaseName());
+
             return 1;
         } catch (\Exception $e) {
             return 0;

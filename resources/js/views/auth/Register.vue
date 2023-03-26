@@ -40,6 +40,7 @@
 <script>
 
     import Form from './../../components/Form'
+    import WebAuthn from './../../components/WebAuthn'
 
     export default {
         data(){
@@ -56,6 +57,7 @@
                 showWebauthnRegistration: false,
                 deviceRegistered: false,
                 deviceId : null,
+                webauthn: new WebAuthn()
             }
         },
 
@@ -72,11 +74,7 @@
                     this.showWebauthnRegistration = true
                 })
                 .catch(error => {
-                    if( error.response.status === 422 && error.response.data.errors.name.includes(this.$t('validation.custom.name.firstUser')) ) {
-
-                        this.$notify({ type: 'is-danger', text: this.$t('errors.cannot_register_more_user'), duration:-1 })
-                    }
-                    else if( error.response.status !== 422 ) {
+                    if( error.response.status !== 422 ) {
 
                         this.$router.push({ name: 'genericError', params: { err: error.response } });
                     }
@@ -95,13 +93,13 @@
                 }
 
                 // Check browser support
-                if (!window.PublicKeyCredential) {
+                if (this.webauthn.doesntSupportWebAuthn) {
                     this.$notify({ type: 'is-danger', text: this.$t('errors.browser_does_not_support_webauthn') })
                     return false
                 }
 
                 const registerOptions = await this.axios.post('/webauthn/register/options').then(res => res.data)
-                const publicKey = this.parseIncomingServerOptions(registerOptions)
+                const publicKey = this.webauthn.parseIncomingServerOptions(registerOptions)
                 let bufferedCredentials
 
                 try {
@@ -117,7 +115,7 @@
                     return false
                 }
 
-                const publicKeyCredential = this.parseOutgoingCredentials(bufferedCredentials);
+                const publicKeyCredential = this.webauthn.parseOutgoingCredentials(bufferedCredentials);
 
                 this.axios.post('/webauthn/register', publicKeyCredential).then(response => {
                     this.deviceId = publicKeyCredential.id

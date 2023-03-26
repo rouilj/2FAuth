@@ -1,7 +1,7 @@
 ARG BUILDPLATFORM=linux/amd64
 ARG TARGETPLATFORM
 ARG ALPINE_VERSION=3.16
-ARG PHP_VERSION=8.0-alpine${ALPINE_VERSION}
+ARG PHP_VERSION=8.1-alpine${ALPINE_VERSION}
 ARG COMPOSER_VERSION=2.3
 ARG SUPERVISORD_VERSION=v0.7.3
 
@@ -156,7 +156,16 @@ ENV \
     MAIL_ENCRYPTION=null \
     MAIL_FROM_NAME=null \
     MAIL_FROM_ADDRESS=null \
+    # API settings
+    # The maximum number of API calls in a minute from the same IP.
+    # Once reached, all requests from this IP will be rejected until the minute has elapsed.
+    # Set to null to disable the API throttling.
+    THROTTLE_API=60 \
     # Authentication settings
+    # The number of times per minute a user can fail to log in before being locked out.
+    # Once reached, all login attempts will be rejected until the minute has elapsed.
+    # This setting applies to both email/password and webauthn login attemps.
+    LOGIN_THROTTLE=5 \
     # The default authentication guard
     # Supported:
     #   'web-guard' : The Laravel built-in auth system (default if nulled)

@@ -2,22 +2,24 @@
 
 namespace Tests\Unit\Listeners;
 
-use App\Models\TwoFAccount;
 use App\Events\TwoFAccountDeleted;
-use Tests\TestCase;
 use App\Listeners\CleanIconStorage;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Event;
-use Mockery\MockInterface;
+use App\Models\TwoFAccount;
 use App\Services\SettingService;
-
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
+use Mockery\MockInterface;
+use Tests\TestCase;
 
 /**
  * @covers \App\Listeners\CleanIconStorage
  */
 class CleanIconStorageTest extends TestCase
 {
-    public function test_it_deletes_icon_file_on_twofaccount_deletion()
+    /**
+     * @test
+     */
+    public function test_it_deletes_icon_file_using_storage_facade()
     {
         $settingService = $this->mock(SettingService::class, function (MockInterface $settingService) {
             $settingService->shouldReceive('get')
@@ -25,8 +27,8 @@ class CleanIconStorageTest extends TestCase
         });
 
         $twofaccount = TwoFAccount::factory()->make();
-        $event = new TwoFAccountDeleted($twofaccount);
-        $listener = new CleanIconStorage();
+        $event       = new TwoFAccountDeleted($twofaccount);
+        $listener    = new CleanIconStorage();
 
         Storage::shouldReceive('disk->delete')
             ->with($event->twofaccount->icon)
@@ -35,7 +37,9 @@ class CleanIconStorageTest extends TestCase
         $this->assertNull($listener->handle($event));
     }
 
-
+    /**
+     * @test
+     */
     public function test_CleanIconStorage_listen_to_TwoFAccountDeleted_event()
     {
         Event::fake();

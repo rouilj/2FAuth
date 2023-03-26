@@ -5,9 +5,9 @@
 
 namespace App\Services\Auth;
 
+use Illuminate\Auth\GuardHelpers;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Auth\UserProvider;
-use Illuminate\Auth\GuardHelpers;
 use Illuminate\Support\Facades\Log;
 
 class ReverseProxyGuard implements Guard
@@ -24,7 +24,6 @@ class ReverseProxyGuard implements Guard
     /**
      * Create a new authentication guard.
      *
-     * @param \Illuminate\Contracts\Auth\UserProvider $provider
      * @return void
      */
     public function __construct(UserProvider $provider)
@@ -33,7 +32,7 @@ class ReverseProxyGuard implements Guard
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function user()
     {
@@ -47,28 +46,28 @@ class ReverseProxyGuard implements Guard
         // Get the user identifier from $_SERVER or apache filtered headers
         $remoteUserHeader = config('auth.auth_proxy_headers.user');
         $remoteUserHeader = $remoteUserHeader ?: 'REMOTE_USER';
-        $identifier = array();
+        $identifier       = [];
 
         try {
-            $identifier['user'] = request()->server($remoteUserHeader) ?? apache_request_headers()[$remoteUserHeader] ?? null;
-        }
-        catch (\Throwable $e) {
-            $identifier['user'] = null;
+            $identifier['id'] = request()->server($remoteUserHeader) ?? apache_request_headers()[$remoteUserHeader] ?? null;
+        } catch (\Throwable $e) {
+            $identifier['id'] = null;
         }
 
-        if (!$identifier['user'] || is_array($identifier['user'])) {
-            Log::error(sprintf('Proxy remote-user header "%s" is empty or missing.', $remoteUserHeader));
+        if (! $identifier['id'] || is_array($identifier['id'])) {
+            Log::error(sprintf('Proxy remote-user header %s is empty or missing.', var_export($remoteUserHeader, true)));
+
             return $this->user = null;
         }
 
         // Get the email identifier from $_SERVER
-        $remoteEmailHeader = config('auth.auth_proxy_headers.email');
+        $remoteEmailHeader   = config('auth.auth_proxy_headers.email');
+        $identifier['email'] = null;
 
         if ($remoteEmailHeader) {
             try {
-                $remoteEmail = (string)(request()->server($remoteEmailHeader) ?? apache_request_headers()[$remoteEmailHeader] ?? null);
-            }
-            catch (\Throwable $e) {
+                $remoteEmail = (string) (request()->server($remoteEmailHeader) ?? apache_request_headers()[$remoteEmailHeader] ?? null);
+            } catch (\Throwable $e) {
                 $remoteEmail = null;
             }
 
@@ -83,9 +82,8 @@ class ReverseProxyGuard implements Guard
     /**
      * Validate a user's credentials.
      *
-     * @param  array  $credentials
      * @return bool
-     * 
+     *
      * @codeCoverageIgnore
      */
     public function validate(array $credentials = [])

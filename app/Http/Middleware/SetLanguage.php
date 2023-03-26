@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Support\Facades\App;
-use App\Facades\Settings;
+use Illuminate\Support\Facades\Auth;
 
 class SetLanguage
 {
@@ -12,40 +12,54 @@ class SetLanguage
      * Handle an incoming request.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @return mixed
      */
     public function handle($request, Closure $next)
     {
         // 3 possible cases here:
-        // - The user has choosen a specific language among those available in the Setting view of 2FAuth
-        // - The client send an accept-language header
-        // - No language is passed from the client
+        // - The http client send an accept-language header
+        // - There is an authenticated user with a possible language set
+        // - No language is specified at all
         //
-        // We prioritize the user defined one, then the request header one, and finally the fallback one.
-        // FI: Settings::get() always returns a fallback value
-        $lang = Settings::get('lang');
+        // Priority to the user preference, then the header request, otherwise the fallback language.
+        // Note that if a user is authenticated later by the auth guard, the app locale
+        // will be overriden if the user has set a specific language in its preferences.
 
-        if($lang === 'browser') {
-            $lang = config('app.fallback_locale');
-            $accepted = $request->header("Accept-Language");
+        $lang     = config('app.fallback_locale');
+        $accepted = str_replace(' ', '', $request->header('Accept-Language'));
 
-            if ($accepted) {
-                $accepted = is_array($accepted) ? implode(',', $accepted) : $accepted;
-                $prefLocales = array_reduce(
-                    explode(',', $accepted),
-                    function ($res, $el) { 
-                        list($l, $q) = array_merge(explode(';q=', $el), [1]); 
-                        $res[$l] = (float) $q; 
-                        return $res;
-                    },
-                    []
-                );
-                arsort($prefLocales);
+        if ($accepted && $accepted !== '*') {
+            $prefLocales = array_reduce(
+                array_diff(explode(',', $accepted), ['*']),
+                function ($langs, $langItem) {
+                    [$langLong, $weight] = array_merge(explode(';q=', $langItem), [1]);
+                    $langShort           = substr($langLong, 0, 2);
+                    if (array_key_exists($langShort, $langs)) {
+                        if ($langs[$langShort] < $weight) {
+                            $langs[$langShort] = (float) $weight;
+                        }
+                    } else {
+                        $langs[$langShort] = (float) $weight;
+                    }
 
-                // We only keep the primary language passed via the header.
-                $lang = array_key_first($prefLocales);
+                    return $langs;
+                },
+                []
+            );
+            arsort($prefLocales);
+
+            // We take the first accepted language available
+            foreach ($prefLocales as $locale => $weight) {
+                if (in_array($locale, config('2fauth.locales'))) {
+                    $lang = $locale;
+                    break;
+                }
             }
+        }
+
+        $user = $request->user();
+        if (! is_null($user) && $request->user()->preferences['lang'] != 'browser') {
+            $lang = $request->user()->preferences['lang'];
         }
 
         // If the language is not available (or partial), strings will be translated using the fallback language.

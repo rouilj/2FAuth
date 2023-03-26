@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands\Utils;
 
-use App\Console\Commands\Utils\IconGenerator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -45,7 +44,7 @@ trait ResetTrait
 
         $this->line('Icons regenerated');
     }
-    
+
     /**
      * Reset DB
      */
@@ -61,16 +60,16 @@ trait ResetTrait
     protected function flushDB() : void
     {
         // Reset the db
-        DB::table('users')->delete();
         DB::table('password_resets')->delete();
         DB::table('oauth_access_tokens')->delete();
         DB::table('oauth_personal_access_clients')->delete();
         DB::table('oauth_refresh_tokens')->delete();
-        DB::table('web_authn_credentials')->delete();
-        DB::table('web_authn_recoveries')->delete();
+        DB::table('webauthn_credentials')->delete();
+        DB::table('webauthn_recoveries')->delete();
         DB::table('twofaccounts')->delete();
-        DB::table('options')->delete();
         DB::table('groups')->delete();
+        DB::table('users')->delete();
+        DB::table('options')->delete();
 
         $this->line('Database cleaned');
     }
@@ -81,10 +80,9 @@ trait ResetTrait
     protected function seedDB(string $seeder) : void
     {
         $this->callSilent('db:seed', [
-            '--class' => $seeder
+            '--class' => $seeder,
         ]);
 
         $this->line('Database seeded');
     }
-
 }

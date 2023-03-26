@@ -15,10 +15,10 @@
                 </div>
                 <!-- credentials list -->
                 <div v-if="credentials.length > 0" class="field">
-                    <div v-for="credential in credentials" :key="credential.id" class="group-item has-text-light is-size-5 is-size-6-mobile">
+                    <div v-for="credential in credentials" :key="credential.id" class="group-item is-size-5 is-size-6-mobile">
                         {{ displayName(credential) }}
                         <!-- revoke link -->
-                        <button class="button tag is-dark is-pulled-right" @click="revokeCredential(credential.id)" :title="$t('settings.revoke')">
+                        <button class="button tag is-pulled-right" :class="$root.showDarkMode ? 'is-dark':'is-white'" @click="revokeCredential(credential.id)" :title="$t('settings.revoke')">
                             {{ $t('settings.revoke') }}
                         </button>
                         <!-- edit link -->
@@ -41,15 +41,13 @@
                 </div>
                 <form>
                     <!-- use webauthn only -->
-                    <form-checkbox v-on:useWebauthnOnly="saveSetting('useWebauthnOnly', $event)" :form="form" fieldName="useWebauthnOnly" :label="$t('auth.webauthn.use_webauthn_only.label')" :help="$t('auth.webauthn.use_webauthn_only.help')" :disabled="isRemoteUser || credentials.length === 0" />
-                    <!-- default sign in method -->
-                    <form-checkbox v-on:useWebauthnAsDefault="saveSetting('useWebauthnAsDefault', $event)" :form="form" fieldName="useWebauthnAsDefault" :label="$t('auth.webauthn.use_webauthn_as_default.label')" :help="$t('auth.webauthn.use_webauthn_as_default.help')" :disabled="isRemoteUser || credentials.length === 0" />
+                    <form-checkbox v-on:useWebauthnOnly="savePreference('useWebauthnOnly', $event)" :form="form" fieldName="useWebauthnOnly" :label="$t('auth.webauthn.use_webauthn_only.label')" :help="$t('auth.webauthn.use_webauthn_only.help')" :disabled="isRemoteUser || credentials.length === 0" />
                 </form>
                 <!-- footer -->
                 <vue-footer :showButtons="true">
                     <!-- close button -->
                     <p class="control">
-                        <router-link :to="{ name: 'accounts', params: { toRefresh: false } }" class="button is-dark is-rounded">{{ $t('commons.close') }}</router-link>
+                        <router-link :to="{ name: 'accounts', params: { toRefresh: false } }" class="button is-rounded" :class="{'is-dark' : $root.showDarkMode}">{{ $t('commons.close') }}</router-link>
                     </p>
                 </vue-footer>
             </form-wrapper>
@@ -60,23 +58,24 @@
 <script>
 
     import Form from './../../components/Form'
+    import WebAuthn from './../../components/WebAuthn'
 
     export default {
         data(){
             return {
                 form: new Form({
                     useWebauthnOnly: null,
-                    useWebauthnAsDefault: null,
                 }),
                 credentials: [],
                 isFetching: false,
                 isRemoteUser: false,
+                webauthn: new WebAuthn()
             }
         },
 
         async mounted() {
 
-            const { data } = await this.form.get('/api/v1/settings')
+            const { data } = await this.form.get('/api/v1/user/preferences')
 
             this.form.fillWithKeyValueObject(data)
             this.form.setOriginal()
@@ -87,12 +86,12 @@
         methods : {
 
             /**
-             * Save a setting
+             * Save a preference
              */
-            saveSetting(settingName, event) {
-                this.axios.put('/api/v1/settings/' + settingName, { value: event }).then(response => {
+            savePreference(preferenceName, event) {
+                this.axios.put('/api/v1/user/preferences/' + preferenceName, { value: event }).then(response => {
                     this.$notify({ type: 'is-success', text: this.$t('settings.forms.setting_saved') })
-                    this.$root.appSettings[response.data.key] = response.data.value
+                    this.$root.userPreferences[response.data.key] = response.data.value
                 })
             },
 
@@ -140,13 +139,13 @@
                 }
 
                 // Check browser support
-                if (!window.PublicKeyCredential) {
+                if (this.webauthn.doesntSupportWebAuthn) {
                     this.$notify({ type: 'is-danger', text: this.$t('errors.browser_does_not_support_webauthn') })
                     return false
                 }
 
                 const registerOptions = await this.axios.post('/webauthn/register/options').then(res => res.data)
-                const publicKey = this.parseIncomingServerOptions(registerOptions)
+                const publicKey = this.webauthn.parseIncomingServerOptions(registerOptions)
                 let bufferedCredentials
 
                 try {
@@ -156,13 +155,22 @@
                     if (error.name == 'AbortError') {
                         this.$notify({ type: 'is-warning', text: this.$t('errors.aborted_by_user') })
                     }
-                    else if (error.name == 'NotAllowedError' || 'InvalidStateError') {
+                    else if (error.name == 'SecurityError') {
+                        this.$notify({ type: 'is-danger', text: this.$t('errors.security_error_check_rpid') })
+                    }
+                    else if (error.name == 'InvalidStateError') {
                         this.$notify({ type: 'is-danger', text: this.$t('errors.security_device_unsupported') })
+                    }
+                    else if (error.name == 'NotAllowedError') {
+                        this.$notify({ type: 'is-danger', text: this.$t('errors.not_allowed_operation') })
+                    }
+                    else if (error.name == 'NotSupportedError') {
+                        this.$notify({ type: 'is-danger', text: this.$t('errors.unsupported_operation') })
                     }
                     return false
                 }
 
-                const publicKeyCredential = this.parseOutgoingCredentials(bufferedCredentials);
+                const publicKeyCredential = this.webauthn.parseOutgoingCredentials(bufferedCredentials);
 
                 this.axios.post('/webauthn/register', publicKeyCredential).then(response => {
                     this.$router.push({ name: 'settings.webauthn.editCredential', params: { id: publicKeyCredential.id, name: this.$t('auth.webauthn.my_device') } })
@@ -182,9 +190,7 @@
 
                         if (this.credentials.length == 0) {
                             this.form.useWebauthnOnly = false
-                            this.form.useWebauthnAsDefault = false
-                            this.$root.appSettings['useWebauthnOnly'] = false
-                            this.$root.appSettings['useWebauthnAsDefault'] = false
+                            this.$root.userPreferences['useWebauthnOnly'] = false
                         }
 
                         this.$notify({ type: 'is-success', text: this.$t('auth.webauthn.device_revoked') })
@@ -196,7 +202,7 @@
              * Always display a printable name
              */
             displayName(credential) {
-                return credential.name ? credential.name : this.$t('auth.webauthn.my_device') + ' (#' + credential.id.substring(0, 10) + ')'
+                return credential.alias ? credential.alias : this.$t('auth.webauthn.my_device') + ' (#' + credential.id.substring(0, 10) + ')'
             },
 
         },

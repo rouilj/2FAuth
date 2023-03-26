@@ -2,6 +2,8 @@
 
 namespace Tests\Unit;
 
+use App\Models\Group;
+use App\Models\TwoFAccount;
 use App\Models\User;
 use Tests\ModelTestCase;
 
@@ -10,7 +12,6 @@ use Tests\ModelTestCase;
  */
 class UserModelTest extends ModelTestCase
 {
-
     /**
      * @test
      */
@@ -21,7 +22,13 @@ class UserModelTest extends ModelTestCase
             ['password', 'remember_token'],
             ['*'],
             [],
-            ['id' => 'int', 'email_verified_at' => 'datetime']
+            [
+                'id'                 => 'int',
+                'email_verified_at'  => 'datetime',
+                'is_admin'           => 'boolean',
+                'twofaccounts_count' => 'integer',
+                'groups_count'       => 'integer',
+            ]
         );
     }
 
@@ -35,5 +42,25 @@ class UserModelTest extends ModelTestCase
         ]);
 
         $this->assertEquals(strtolower('UPPERCASE@example.COM'), $user->email);
+    }
+
+    /**
+     * @test
+     */
+    public function test_twofaccounts_relation()
+    {
+        $user     = new User();
+        $accounts = $user->twofaccounts();
+        $this->assertHasManyRelation($accounts, $user, new TwoFAccount());
+    }
+
+    /**
+     * @test
+     */
+    public function test_groups_relation()
+    {
+        $user   = new User();
+        $groups = $user->groups();
+        $this->assertHasManyRelation($groups, $user, new Group());
     }
 }

@@ -6,7 +6,7 @@
                 <div class="column is-one-third-tablet is-one-quarter-desktop is-one-quarter-widescreen is-one-quarter-fullhd">
                     <div class="columns is-multiline">
                         <div class="column is-full" v-for="group in groups" v-if="group.twofaccounts_count > 0" :key="group.id">
-                            <button class="button is-fullwidth is-dark has-text-light is-outlined" @click="setActiveGroup(group.id)">{{ group.name }}</button>
+                            <button class="button is-fullwidth" :class="{'is-dark has-text-light is-outlined':$root.showDarkMode}" @click="setActiveGroup(group.id)">{{ group.name }}</button>
                         </div>
                     </div>
                     <div class="columns is-centered">
@@ -19,7 +19,7 @@
             <vue-footer :showButtons="true">
                 <!-- Close Group switch button -->
                 <p class="control">
-                    <button class="button is-dark is-rounded" @click="closeGroupSwitch()">{{ $t('commons.close') }}</button>
+                    <button class="button is-rounded" :class="{'is-dark' : $root.showDarkMode}" @click="closeGroupSwitch()">{{ $t('commons.close') }}</button>
                 </p>
             </vue-footer>
         </div>
@@ -32,7 +32,7 @@
                 <div class="column is-one-third-tablet is-one-quarter-desktop is-one-quarter-widescreen is-one-quarter-fullhd">
                     <div class="columns is-multiline">
                         <div class="column is-full" v-for="group in groups" :key="group.id">
-                            <button class="button is-fullwidth is-dark has-text-light is-outlined" :class="{ 'is-link' : moveAccountsTo === group.id}" @click="moveAccountsTo = group.id">
+                            <button class="button is-fullwidth" :class="{'is-link' : moveAccountsTo === group.id, 'is-dark has-text-light is-outlined':$root.showDarkMode}" @click="moveAccountsTo = group.id">
                                 <span v-if="group.id === 0" class="is-italic">
                                     {{ $t('groups.no_group') }}
                                 </span>
@@ -56,92 +56,58 @@
                 </p>
                 <!-- Cancel button -->
                 <p class="control">
-                    <button class="button is-dark is-rounded" @click="showGroupSelector = false">{{ $t('commons.cancel') }}</button>
+                    <button class="button is-rounded" :class="{'is-dark' : $root.showDarkMode}" @click="showGroupSelector = false">{{ $t('commons.cancel') }}</button>
                 </p>
             </vue-footer>
         </div>
         <!-- header -->
-        <div class="header has-background-black-ter" v-if="this.showAccounts || this.showGroupSwitch">
+        <div class="header" v-if="this.showAccounts || this.showGroupSwitch">
             <div class="columns is-gapless is-mobile is-centered">
-                <div v-if="editMode" class="column">
-                    <!-- toolbar -->
-                    <div class="toolbar has-text-centered">
-                        <div class="field is-grouped is-justify-content-center has-text-grey mb-2">
-                            <!-- selected label -->
-                            <p class="control mr-1">
-                                {{ selectedAccounts.length }}&nbsp;{{ $t('commons.selected') }}
-                            </p>
-                            <!-- deselect all -->
-                            <p class="control mr-4">
-                                <button @click="clearSelected" class="clear-selection delete" :style="{visibility: selectedAccounts.length > 0 ? 'visible' : 'hidden'}" :title="$t('commons.clear_selection')"></button>
-                            </p>
-                            <!-- select all button -->
-                            <p class="control mr-5">
-                                <button @click="selectAll" class="button has-line-height p-1 is-ghost has-background-black-ter has-text-grey" :title="$t('commons.select_all')">
-                                    <span>{{ $t('commons.all') }}</span>
-                                    <font-awesome-icon class="ml-1" :icon="['fas', 'check-square']" />
-                                </button>
-                            </p>
-                            <!-- sort asc/desc buttons -->
-                            <p class="control">
-                                <button @click="sortAsc" class="button has-line-height p-1 is-ghost has-background-black-ter has-text-grey" :title="$t('commons.sort_ascending')">
-                                    <font-awesome-icon :icon="['fas', 'sort-alpha-down']" />
-                                </button>
-                            </p>
-                            <p class="control">
-                                <button @click="sortDesc" class="button has-line-height p-1 is-ghost has-background-black-ter has-text-grey" :title="$t('commons.sort_descending')">
-                                    <font-awesome-icon :icon="['fas', 'sort-alpha-up']" />
-                                </button>
-                            </p>
-                        </div>
-                        <div class="field is-grouped is-justify-content-center pb-2">
-                            <!-- Change group button -->
-                            <div v-if="selectedAccounts.length > 0" class="control">
-                                <div tabindex="0" role="button" class="tag-button tag-button-link tags are-medium has-addons is-clickable" @click="showGroupSelector = true" @keyup.enter="showGroupSelector = true">
-                                    <span class="tag is-dark mb-0">
-                                        {{ $t('groups.change_group') }}
-                                    </span>
-                                    <span class="tag is-link mb-0">
-                                        <font-awesome-icon :icon="['fas', 'layer-group']" />
-                                    </span>
-                                </div>
-                            </div>
-                            <!-- delete selected button -->
-                            <div v-if="selectedAccounts.length > 0" class="control">
-                                <div tabindex="0" role="button" class="tag-button tag-button-danger tags are-medium has-addons is-clickable" @click="destroyAccounts" @keyup.enter="destroyAccounts">
-                                    <span class="tag is-dark mb-0">
-                                        {{ $t('commons.delete') }}
-                                    </span>
-                                    <span class="tag is-danger mb-0">
-                                        <font-awesome-icon :icon="['fas', 'trash']" />
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div v-else class="column is-three-quarters-mobile is-one-third-tablet is-one-quarter-desktop is-one-quarter-widescreen is-one-quarter-fullhd">
+                <div class="column is-three-quarters-mobile is-one-third-tablet is-one-quarter-desktop is-one-quarter-widescreen is-one-quarter-fullhd">
                     <!-- search -->
                     <div role="search" class="field">
                         <div class="control has-icons-right">
-                            <input id="txtSearch" type="search" tabindex="1" :aria-label="$t('commons.search')" :title="$t('commons.search')" class="input is-rounded is-search" v-model="search">
+                            <input ref="searchBox" id="txtSearch" type="search" tabindex="1" :aria-label="$t('commons.search')" :title="$t('commons.search')" class="input is-rounded is-search" v-model="search">
                             <span class="icon is-small is-right">
                                 <font-awesome-icon :icon="['fas', 'search']"  v-if="!search" />
                                 <button tabindex="1" :title="$t('commons.clear_search')" class="clear-selection delete" v-if="search" @click="search = '' "></button>
                             </span>
                         </div>
                     </div>
+                    <!-- toolbar -->
+                    <div v-if="editMode" class="toolbar has-text-centered">
+                        <div class="columns">
+                            <div class="column">
+                                <!-- selected label -->
+                                <span class="has-text-grey mr-1">{{ selectedAccounts.length }}&nbsp;{{ $t('commons.selected') }}</span>
+                                <!-- deselect all -->
+                                <button @click="clearSelected" class="clear-selection delete mr-4" :style="{visibility: selectedAccounts.length > 0 ? 'visible' : 'hidden'}" :title="$t('commons.clear_selection')"></button>
+                                <!-- select all button -->
+                                <button @click="selectAll" class="button mr-5 has-line-height p-1 is-ghost has-text-grey" :title="$t('commons.select_all')">
+                                    <span>{{ $t('commons.all') }}</span>
+                                    <font-awesome-icon class="ml-1" :icon="['fas', 'check-square']" />
+                                </button>
+                                <!-- sort asc/desc buttons -->
+                                <button @click="sortAsc" class="button has-line-height p-1 is-ghost has-text-grey" :title="$t('commons.sort_ascending')">
+                                    <font-awesome-icon :icon="['fas', 'sort-alpha-down']" />
+                                </button>
+                                <button @click="sortDesc" class="button has-line-height p-1 is-ghost has-text-grey" :title="$t('commons.sort_descending')">
+                                    <font-awesome-icon :icon="['fas', 'sort-alpha-up']" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <!-- group switch toggle -->
-                    <div class="has-text-centered">
+                    <div v-else class="has-text-centered">
                         <div class="columns">
                             <div class="column" v-if="!showGroupSwitch">
-                                <button :title="$t('groups.show_group_selector')" tabindex="1" class="button is-text is-like-text" @click.stop="toggleGroupSwitch">
+                                <button :title="$t('groups.show_group_selector')" tabindex="1" class="button is-text is-like-text" :class="{'has-text-grey' : !$root.showDarkMode}" @click.stop="toggleGroupSwitch">
                                     {{ activeGroupName }} ({{ filteredAccounts.length }})&nbsp;
                                     <font-awesome-icon  :icon="['fas', 'caret-down']" />
                                 </button>
                             </div>
                             <div class="column" v-else>
-                                <button :title="$t('groups.hide_group_selector')" tabindex="1" class="button is-text is-like-text" @click.stop="toggleGroupSwitch">
+                                <button :title="$t('groups.hide_group_selector')" tabindex="1" class="button is-text is-like-text" :class="{'has-text-grey' : !$root.showDarkMode}" @click.stop="toggleGroupSwitch">
                                     {{ $t('groups.select_accounts_to_show') }}
                                 </button>
                             </div>
@@ -164,20 +130,20 @@
                 loadingLabel: 'refreshing'
                 }" > -->
                 <draggable v-model="filteredAccounts" @start="drag = true" @end="saveOrder" ghost-class="ghost" handle=".tfa-dots" animation="200" class="accounts">
-                    <transition-group class="columns is-multiline" :class="{ 'is-centered': $root.appSettings.displayMode === 'grid' }" type="transition" :name="!drag ? 'flip-list' : null">
-                        <div :class="[$root.appSettings.displayMode === 'grid' ? 'tfa-grid' : 'tfa-list']" class="column is-narrow has-text-white" v-for="account in filteredAccounts" :key="account.id">
+                    <transition-group class="columns is-multiline" :class="{ 'is-centered': $root.userPreferences.displayMode === 'grid' }" type="transition" :name="!drag ? 'flip-list' : null">
+                        <div :class="[$root.userPreferences.displayMode === 'grid' ? 'tfa-grid' : 'tfa-list']" class="column is-narrow" v-for="account in filteredAccounts" :key="account.id">
                             <div class="tfa-container">
         	                    <transition name="slideCheckbox">
         	                        <div class="tfa-cell tfa-checkbox" v-if="editMode">
         	                            <div class="field">
-        	                                <input class="is-checkradio is-small is-white" :id="'ckb_' + account.id" :value="account.id" type="checkbox" :name="'ckb_' + account.id" v-model="selectedAccounts">
+        	                                <input class="is-checkradio is-small" :class="$root.showDarkMode ? 'is-white':'is-info'" :id="'ckb_' + account.id" :value="account.id" type="checkbox" :name="'ckb_' + account.id" v-model="selectedAccounts">
         	                                <label tabindex="0" :for="'ckb_' + account.id" v-on:keypress.space.prevent="selectAccount(account.id)"></label>
         	                            </div>
         	                        </div>
         	                    </transition>
                                 <div tabindex="0" class="tfa-cell tfa-content is-size-3 is-size-4-mobile" @click="showAccount(account)" @keyup.enter="showAccount(account)" role="button">  
                                     <div class="tfa-text has-ellipsis">
-                                        <img :src="'/storage/icons/' + account.icon" v-if="account.icon && $root.appSettings.showAccountsIcons" :alt="$t('twofaccounts.icon_for_account_x_at_service_y', {account: account.account, service: account.service})">
+                                        <img :src="$root.appConfig.subdirectory + '/storage/icons/' + account.icon" v-if="account.icon && $root.userPreferences.showAccountsIcons" :alt="$t('twofaccounts.icon_for_account_x_at_service_y', {account: account.account, service: account.service})">
                                         {{ displayService(account.service) }}<font-awesome-icon class="has-text-danger is-size-5 ml-2" v-if="$root.appSettings.useEncryption && account.account === $t('errors.indecipherable')" :icon="['fas', 'exclamation-circle']" />
                                         <span class="is-family-primary is-size-6 is-size-7-mobile has-text-grey ">{{ account.account }}</span>
                                     </div>
@@ -185,10 +151,10 @@
         	                    <transition name="fadeInOut">
         	                        <div class="tfa-cell tfa-edit has-text-grey" v-if="editMode">
                                         <!-- <div class="tags has-addons"> -->
-                                            <router-link :to="{ name: 'editAccount', params: { twofaccountId: account.id }}" class="tag is-dark is-rounded mr-1">
+                                            <router-link :to="{ name: 'editAccount', params: { twofaccountId: account.id }}" class="tag is-rounded mr-1" :class="$root.showDarkMode ? 'is-dark' : 'is-white'">
                                             {{ $t('commons.edit') }}
                                             </router-link>
-                                            <router-link :to="{ name: 'showQRcode', params: { twofaccountId: account.id }}" class="tag is-dark is-rounded" :title="$t('twofaccounts.show_qrcode')">
+                                            <router-link :to="{ name: 'showQRcode', params: { twofaccountId: account.id }}" class="tag is-rounded" :class="$root.showDarkMode ? 'is-dark' : 'is-white'" :title="$t('twofaccounts.show_qrcode')">
                                                 <font-awesome-icon :icon="['fas', 'qrcode']" />
                                             </router-link>
                                        <!-- </div> -->
@@ -204,7 +170,7 @@
                     </transition-group>
                 </draggable>
             <!-- </vue-pull-refresh> -->
-            <vue-footer :showButtons="true">
+            <vue-footer :showButtons="true" :editMode="editMode" v-on:exit-edit="setEditModeTo(false)">
                 <!-- New item buttons -->
                 <p class="control" v-if="!editMode">
                     <button class="button is-link is-rounded is-focus" @click="start">
@@ -216,15 +182,35 @@
                 </p>
                 <!-- Manage button -->
                 <p class="control" v-if="!editMode">
-                    <button class="button is-dark is-rounded" @click="setEditModeTo(true)">{{ $t('commons.manage') }}</button>
+                    <button class="button is-rounded" :class="{'is-dark' : $root.showDarkMode}" @click="setEditModeTo(true)">{{ $t('commons.manage') }}</button>
                 </p>
-                <!-- Done button -->
+                <!-- move button -->
                 <p class="control" v-if="editMode">
-                    <button class="button is-success is-rounded" @click="setEditModeTo(false)">
-                        <span>{{ $t('commons.done') }}</span>
-                        <span class="icon is-small">
-                            <font-awesome-icon :icon="['fas', 'check']" />
-                        </span>
+                    <button 
+                        :disabled='selectedAccounts.length == 0' class="button is-rounded" 
+                        :class="[{'is-outlined': $root.showDarkMode||selectedAccounts.length == 0}, selectedAccounts.length == 0 ? 'is-dark': 'is-link']" 
+                        @click="showGroupSelector = true"
+                        :title="$t('groups.move_selected_to_group')" >
+                            {{ $t('commons.move') }}
+                    </button>
+                </p>
+                <!-- delete button -->
+                <p class="control" v-if="editMode">
+                    <button 
+                        :disabled='selectedAccounts.length == 0' class="button is-rounded" 
+                        :class="[{'is-outlined': $root.showDarkMode||selectedAccounts.length == 0}, selectedAccounts.length == 0 ? 'is-dark': 'is-link']" 
+                        @click="destroyAccounts" >
+                            {{ $t('commons.delete') }}
+                    </button>
+                </p>
+                <!-- export button -->
+                <p class="control" v-if="editMode">
+                    <button 
+                        :disabled='selectedAccounts.length == 0' class="button is-rounded" 
+                        :class="[{'is-outlined': $root.showDarkMode||selectedAccounts.length == 0}, selectedAccounts.length == 0 ? 'is-dark': 'is-link']" 
+                        @click="exportAccounts" 
+                        :title="$t('twofaccounts.export_selected_to_json')" >
+                            {{ $t('commons.export') }}
                     </button>
                 </p>
             </vue-footer>
@@ -259,8 +245,8 @@
      *    ~ The Edit mode
      *  - User are automatically pushed to the start view if there is no account to list.
      *  - The view is affected by :
-     *    ~ 'appSettings.showAccountsIcons' toggle the icon visibility
-     *    ~ 'appSettings.displayMode' change the account appearance
+     *    ~ 'userPreferences.showAccountsIcons' toggle the icon visibility
+     *    ~ 'userPreferences.displayMode' change the account appearance
      *
      *  Input : 
      *  - The 'initialEditMode' props : allows to load the view directly in Edit mode
@@ -272,6 +258,7 @@
     import draggable from 'vuedraggable'
     import Form from './../components/Form'
     import objectEquals from 'object-equals'
+    import { saveAs } from 'file-saver';
 
     export default {
         data(){
@@ -287,7 +274,7 @@
                 showGroupSelector: false,
                 moveAccountsTo: false,
                 form: new Form({
-                    value: this.$root.appSettings.activeGroup,
+                    value: this.$root.userPreferences.activeGroup,
                 }),
             }
         },
@@ -301,10 +288,10 @@
 
                     return this.accounts.filter(
                         item => {
-                            if( parseInt(this.$root.appSettings.activeGroup) > 0 ) {
+                            if( parseInt(this.$root.userPreferences.activeGroup) > 0 ) {
                                 return ((item.service ? item.service.toLowerCase().includes(this.search.toLowerCase()) : false) || 
                                     item.account.toLowerCase().includes(this.search.toLowerCase())) && 
-                                    (item.group_id == parseInt(this.$root.appSettings.activeGroup))
+                                    (item.group_id == parseInt(this.$root.userPreferences.activeGroup))
                             }
                             else {
                                 return ((item.service ? item.service.toLowerCase().includes(this.search.toLowerCase()) : false) || 
@@ -329,7 +316,7 @@
              * Returns the name of a group
              */
             activeGroupName() {
-                let g = this.groups.find(el => el.id === parseInt(this.$root.appSettings.activeGroup))
+                let g = this.groups.find(el => el.id === parseInt(this.$root.userPreferences.activeGroup))
 
                 if(g) {
                     return g.name
@@ -344,6 +331,8 @@
         props: ['initialEditMode', 'toRefresh'],
 
         mounted() {
+
+            document.addEventListener('keydown', this.keyListener)
 
             // we don't have to fetch fresh data so we try to load them from localstorage to avoid display latency
             if( !this.toRefresh && !this.$route.params.isFirstLoad ) {
@@ -364,6 +353,10 @@
 
         },
 
+        destroyed () {
+            document.removeEventListener('keydown', this.keyListener)
+        },
+
         components: {
             Modal,
             OtpDisplayer,
@@ -376,10 +369,10 @@
              * Route user to the appropriate submitting view
              */
             start() {
-                if( this.$root.appSettings.useDirectCapture && this.$root.appSettings.defaultCaptureMode === 'advancedForm' ) {
+                if( this.$root.userPreferences.useDirectCapture && this.$root.userPreferences.defaultCaptureMode === 'advancedForm' ) {
                     this.$router.push({ name: 'createAccount' })
                 }
-                else if( this.$root.appSettings.useDirectCapture && this.$root.appSettings.defaultCaptureMode === 'livescan' ) {
+                else if( this.$root.userPreferences.useDirectCapture && this.$root.userPreferences.defaultCaptureMode === 'livescan' ) {
                     this.$router.push({ name: 'capture' })
                 }
                 else {
@@ -486,6 +479,20 @@
             },
 
             /**
+             * Export selected accounts
+             */
+            exportAccounts() {
+                let ids = []
+                this.selectedAccounts.forEach(id => ids.push(id))
+
+                this.axios.get('/api/v1/twofaccounts/export?ids=' + ids.join(), {responseType: 'blob'})
+                    .then((response) => {
+                        var blob = new Blob([response.data], {type: "application/json;charset=utf-8"});
+                        saveAs.saveAs(blob, "2fauth_export.json");
+                    })
+            },
+
+            /**
              * Move accounts selected from the Edit mode to another group or withdraw them
              */
             async moveAccounts() {
@@ -534,11 +541,11 @@
             setActiveGroup(id) {
 
                 // In memomry saving
-                this.form.value = this.$root.appSettings.activeGroup = id
+                this.form.value = this.$root.userPreferences.activeGroup = id
 
                 // In db saving if the user set 2FAuth to memorize the active group
-                if( this.$root.appSettings.rememberActiveGroup ) {
-                    this.form.put('/api/v1/settings/activeGroup', {returnError: true})
+                if( this.$root.userPreferences.rememberActiveGroup ) {
+                    this.form.put('/api/v1/user/preferences/activeGroup', {returnError: true})
                     .then(response => {
                         // everything's fine
                     })
@@ -581,15 +588,8 @@
              * Toggle the accounts list between View mode and Edit mode
              */
             setEditModeTo(state) {
-                if( state === false ) {
-                    this.selectedAccounts = []
-                }
-                else {
-                    this.search = '';
-                }
-
+                this.selectedAccounts = []
                 this.editMode = state
-                this.$parent.showToolbar = state
             },
 
             /**
@@ -634,6 +634,19 @@
             sortDesc() {
                 this.accounts.sort((a, b) => a.service < b.service ? 1 : -1)
                 this.saveOrder()
+            },
+
+            /**
+             * 
+             */
+            keyListener : function(e) {
+                if (e.key === "f" && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    const searchBox = document.getElementById('txtSearch');
+                    if (searchBox != undefined) {
+                        searchBox.focus()
+                    }
+                }
             },
         }
     };

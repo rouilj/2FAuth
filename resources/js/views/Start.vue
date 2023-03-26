@@ -11,7 +11,7 @@
             <div class="column is-full quick-uploader-button" >
                 <div class="quick-uploader-centerer">
                     <!-- upload a qr code (with basic file field and backend decoding) -->
-                    <label role="button" tabindex="0" v-if="$root.appSettings.useBasicQrcodeReader" class="button is-link is-medium is-rounded is-main" ref="qrcodeInputLabel" @keyup.enter="$refs.qrcodeInputLabel.click()">
+                    <label role="button" tabindex="0" v-if="$root.userPreferences.useBasicQrcodeReader" class="button is-link is-medium is-rounded is-main" ref="qrcodeInputLabel" @keyup.enter="$refs.qrcodeInputLabel.click()">
                         <input aria-hidden="true" tabindex="-1" class="file-input" type="file" accept="image/*" v-on:change="submitQrCode" ref="qrcodeInput">
                         {{ $t('twofaccounts.forms.upload_qrcode') }}
                     </label>
@@ -23,9 +23,9 @@
             </div>
             <!-- alternative methods -->
             <div class="column is-full">
-                <div class="block has-text-light">{{ $t('twofaccounts.forms.alternative_methods') }}</div>
+                <div class="block" :class="$root.showDarkMode ? 'has-text-light':'has-text-grey-dark'">{{ $t('twofaccounts.forms.alternative_methods') }}</div>
                 <!-- upload a qr code -->
-                <div class="block has-text-link" v-if="!$root.appSettings.useBasicQrcodeReader">
+                <div class="block has-text-link" v-if="!$root.userPreferences.useBasicQrcodeReader">
                     <label role="button" tabindex="0" class="button is-link is-outlined is-rounded" ref="qrcodeInputLabel" @keyup.enter="$refs.qrcodeInputLabel.click()">
                         <input aria-hidden="true" tabindex="-1" class="file-input" type="file" accept="image/*" v-on:change="submitQrCode" ref="qrcodeInput">
                         {{ $t('twofaccounts.forms.upload_qrcode') }}
@@ -49,7 +49,7 @@
         <vue-footer :showButtons="true" >
             <!-- back button -->
             <p class="control" v-if="accountCount > 0">
-                <router-link class="button is-dark is-rounded" :to="{ name: returnToView }" >
+                <router-link class="button is-rounded" :class="{'is-dark' : $root.showDarkMode}" :to="{ name: returnToView }" >
                     {{ $t('commons.back') }}
                 </router-link>
             </p>
@@ -109,7 +109,7 @@
         created() {
 
             this.$nextTick(() => {
-                if( this.$root.appSettings.useDirectCapture && this.$root.appSettings.defaultCaptureMode === 'upload' ) {
+                if( this.$root.userPreferences.useDirectCapture && this.$root.userPreferences.defaultCaptureMode === 'upload' ) {
                     this.$refs.qrcodeInputLabel.click()
                 }
             })

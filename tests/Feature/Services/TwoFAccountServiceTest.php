@@ -2,35 +2,38 @@
 
 namespace Tests\Feature\Services;
 
+use App\Facades\TwoFAccounts;
 use App\Models\Group;
 use App\Models\TwoFAccount;
+use App\Models\User;
+use Tests\Data\MigrationTestData;
+use Tests\Data\OtpTestData;
 use Tests\FeatureTestCase;
-use Tests\Classes\OtpTestData;
-use App\Facades\TwoFAccounts;
-
 
 /**
  * @covers \App\Services\TwoFAccountService
+ * @covers \App\Facades\TwoFAccounts
  */
 class TwoFAccountServiceTest extends FeatureTestCase
 {
     /**
-     * App\Models\TwoFAccount $customTotpTwofaccount
+     * @var \App\Models\User|\Illuminate\Contracts\Auth\Authenticatable
+     */
+    protected $user;
+
+    /**
+     * @var \App\Models\TwoFAccount
      */
     protected $customTotpTwofaccount;
 
-
-    /**
-     * App\Models\Group $group
-     */
-    protected $group;
-
-
-    /**
-     * App\Models\TwoFAccount $customTotpTwofaccount
-     */
     protected $customHotpTwofaccount;
 
+    /**
+     * @var \App\Models\Group
+     */
+    protected $userGroupA;
+
+    protected $userGroupB;
 
     /**
      * @test
@@ -39,38 +42,36 @@ class TwoFAccountServiceTest extends FeatureTestCase
     {
         parent::setUp();
 
-        $this->customTotpTwofaccount = new TwoFAccount;
-        $this->customTotpTwofaccount->legacy_uri = OtpTestData::TOTP_FULL_CUSTOM_URI;
-        $this->customTotpTwofaccount->service = OtpTestData::SERVICE;
-        $this->customTotpTwofaccount->account = OtpTestData::ACCOUNT;
-        $this->customTotpTwofaccount->icon = OtpTestData::ICON;
-        $this->customTotpTwofaccount->otp_type = 'totp';
-        $this->customTotpTwofaccount->secret = OtpTestData::SECRET;
-        $this->customTotpTwofaccount->digits = OtpTestData::DIGITS_CUSTOM;
-        $this->customTotpTwofaccount->algorithm = OtpTestData::ALGORITHM_CUSTOM;
-        $this->customTotpTwofaccount->period = OtpTestData::PERIOD_CUSTOM;
-        $this->customTotpTwofaccount->counter = null;
-        $this->customTotpTwofaccount->save();
+        $this->user       = User::factory()->create();
+        $this->userGroupA = Group::factory()->for($this->user)->create();
+        $this->userGroupB = Group::factory()->for($this->user)->create();
 
-        $this->customHotpTwofaccount = new TwoFAccount;
-        $this->customHotpTwofaccount->legacy_uri = OtpTestData::HOTP_FULL_CUSTOM_URI;
-        $this->customHotpTwofaccount->service = OtpTestData::SERVICE;
-        $this->customHotpTwofaccount->account = OtpTestData::ACCOUNT;
-        $this->customHotpTwofaccount->icon = OtpTestData::ICON;
-        $this->customHotpTwofaccount->otp_type = 'hotp';
-        $this->customHotpTwofaccount->secret = OtpTestData::SECRET;
-        $this->customHotpTwofaccount->digits = OtpTestData::DIGITS_CUSTOM;
-        $this->customHotpTwofaccount->algorithm = OtpTestData::ALGORITHM_CUSTOM;
-        $this->customHotpTwofaccount->period = null;
-        $this->customHotpTwofaccount->counter = OtpTestData::COUNTER_CUSTOM;
-        $this->customHotpTwofaccount->save();
+        $this->customTotpTwofaccount = TwoFAccount::factory()->for($this->user)->create([
+            'legacy_uri' => OtpTestData::TOTP_FULL_CUSTOM_URI,
+            'service'    => OtpTestData::SERVICE,
+            'account'    => OtpTestData::ACCOUNT,
+            'icon'       => OtpTestData::ICON_PNG,
+            'otp_type'   => 'totp',
+            'secret'     => OtpTestData::SECRET,
+            'digits'     => OtpTestData::DIGITS_CUSTOM,
+            'algorithm'  => OtpTestData::ALGORITHM_CUSTOM,
+            'period'     => OtpTestData::PERIOD_CUSTOM,
+            'counter'    => null,
+        ]);
 
-
-        $this->group = new Group;
-        $this->group->name = 'MyGroup';
-        $this->group->save();
+        $this->customHotpTwofaccount = TwoFAccount::factory()->for($this->user)->create([
+            'legacy_uri' => OtpTestData::HOTP_FULL_CUSTOM_URI,
+            'service'    => OtpTestData::SERVICE,
+            'account'    => OtpTestData::ACCOUNT,
+            'icon'       => OtpTestData::ICON_PNG,
+            'otp_type'   => 'hotp',
+            'secret'     => OtpTestData::SECRET,
+            'digits'     => OtpTestData::DIGITS_CUSTOM,
+            'algorithm'  => OtpTestData::ALGORITHM_CUSTOM,
+            'period'     => null,
+            'counter'    => OtpTestData::COUNTER_CUSTOM,
+        ]);
     }
-
 
     /**
      * @test
@@ -78,43 +79,60 @@ class TwoFAccountServiceTest extends FeatureTestCase
     public function test_withdraw_comma_separated_ids_deletes_relation()
     {
         $twofaccounts = collect([$this->customHotpTwofaccount, $this->customTotpTwofaccount]);
-        $this->group->twofaccounts()->saveMany($twofaccounts);
-        
-        TwoFAccounts::withdraw($this->customHotpTwofaccount->id.','.$this->customTotpTwofaccount->id);
+        $this->userGroupA->twofaccounts()->saveMany($twofaccounts);
 
         $this->assertDatabaseHas('twofaccounts', [
-            'id'      => $this->customTotpTwofaccount->id,
-            'group_id'      => null,
+            'id'       => $this->customHotpTwofaccount->id,
+            'group_id' => $this->userGroupA->id,
         ]);
 
         $this->assertDatabaseHas('twofaccounts', [
-            'id'      => $this->customHotpTwofaccount->id,
-            'group_id'      => null,
+            'id'       => $this->customTotpTwofaccount->id,
+            'group_id' => $this->userGroupA->id,
+        ]);
+
+        TwoFAccounts::withdraw($this->customHotpTwofaccount->id . ',' . $this->customTotpTwofaccount->id);
+
+        $this->assertDatabaseHas('twofaccounts', [
+            'id'       => $this->customTotpTwofaccount->id,
+            'group_id' => null,
+        ]);
+
+        $this->assertDatabaseHas('twofaccounts', [
+            'id'       => $this->customHotpTwofaccount->id,
+            'group_id' => null,
         ]);
     }
-
 
     /**
      * @test
      */
-    public function test_withdraw_array_of_model_ids_deletes_relation()
+    public function test_withdraw_array_of_ids_deletes_relation()
     {
         $twofaccounts = collect([$this->customHotpTwofaccount, $this->customTotpTwofaccount]);
-        $this->group->twofaccounts()->saveMany($twofaccounts);
-        
+        $this->userGroupA->twofaccounts()->saveMany($twofaccounts);
+
+        $this->assertDatabaseHas('twofaccounts', [
+            'id'       => $this->customHotpTwofaccount->id,
+            'group_id' => $this->userGroupA->id,
+        ]);
+
+        $this->assertDatabaseHas('twofaccounts', [
+            'id'       => $this->customTotpTwofaccount->id,
+            'group_id' => $this->userGroupA->id,
+        ]);
         TwoFAccounts::withdraw([$this->customHotpTwofaccount->id, $this->customTotpTwofaccount->id]);
 
         $this->assertDatabaseHas('twofaccounts', [
-            'id'      => $this->customTotpTwofaccount->id,
-            'group_id'      => null,
+            'id'       => $this->customTotpTwofaccount->id,
+            'group_id' => null,
         ]);
 
         $this->assertDatabaseHas('twofaccounts', [
-            'id'      => $this->customHotpTwofaccount->id,
-            'group_id'      => null,
+            'id'       => $this->customHotpTwofaccount->id,
+            'group_id' => null,
         ]);
     }
-
 
     /**
      * @test
@@ -122,16 +140,20 @@ class TwoFAccountServiceTest extends FeatureTestCase
     public function test_withdraw_single_id_deletes_relation()
     {
         $twofaccounts = collect([$this->customHotpTwofaccount, $this->customTotpTwofaccount]);
-        $this->group->twofaccounts()->saveMany($twofaccounts);
-        
+        $this->userGroupA->twofaccounts()->saveMany($twofaccounts);
+
+        $this->assertDatabaseHas('twofaccounts', [
+            'id'       => $this->customTotpTwofaccount->id,
+            'group_id' => $this->userGroupA->id,
+        ]);
+
         TwoFAccounts::withdraw($this->customTotpTwofaccount->id);
 
         $this->assertDatabaseHas('twofaccounts', [
-            'id'      => $this->customTotpTwofaccount->id,
-            'group_id'      => null,
+            'id'       => $this->customTotpTwofaccount->id,
+            'group_id' => null,
         ]);
     }
-
 
     /**
      * @test
@@ -141,58 +163,14 @@ class TwoFAccountServiceTest extends FeatureTestCase
         $this->assertNull(TwoFAccounts::withdraw(null));
     }
 
-    
     /**
      * @test
      */
-    public function test_delete_comma_separated_ids()
-    {        
-        TwoFAccounts::delete($this->customHotpTwofaccount->id.','.$this->customTotpTwofaccount->id);
+    public function test_migrate_from_gauth_returns_correct_accounts()
+    {
+        $this->actingAs($this->user);
 
-        $this->assertDatabaseMissing('twofaccounts', [
-            'id'      => $this->customTotpTwofaccount->id,
-        ]);
-        $this->assertDatabaseMissing('twofaccounts', [
-            'id'      => $this->customHotpTwofaccount->id,
-        ]);
-    }
-
-
-    /**
-     * @test
-     */
-    public function test_delete_array_of_ids()
-    {        
-        TwoFAccounts::delete([$this->customTotpTwofaccount->id, $this->customHotpTwofaccount->id]);
-
-        $this->assertDatabaseMissing('twofaccounts', [
-            'id'      => $this->customTotpTwofaccount->id,
-        ]);
-        $this->assertDatabaseMissing('twofaccounts', [
-            'id'      => $this->customHotpTwofaccount->id,
-        ]);
-    }
-
-
-    /**
-     * @test
-     */
-    public function test_delete_single_id()
-    {        
-        TwoFAccounts::delete($this->customTotpTwofaccount->id);
-
-        $this->assertDatabaseMissing('twofaccounts', [
-            'id'      => $this->customTotpTwofaccount->id,
-        ]);
-    }
-
-
-    /**
-     * @test
-     */
-    public function test_convert_migration_from_gauth_returns_correct_accounts()
-    {        
-        $twofaccounts = TwoFAccounts::migrate(OtpTestData::GOOGLE_AUTH_MIGRATION_URI);
+        $twofaccounts = TwoFAccounts::migrate(MigrationTestData::GOOGLE_AUTH_MIGRATION_URI);
 
         $this->assertCount(2, $twofaccounts);
 
@@ -206,8 +184,8 @@ class TwoFAccountServiceTest extends FeatureTestCase
         $this->assertEquals(OtpTestData::ALGORITHM_DEFAULT, $twofaccounts->first()->algorithm);
 
         $this->assertEquals('totp', $twofaccounts->last()->otp_type);
-        $this->assertEquals(OtpTestData::SERVICE.'_bis', $twofaccounts->last()->service);
-        $this->assertEquals(OtpTestData::ACCOUNT.'_bis', $twofaccounts->last()->account);
+        $this->assertEquals(OtpTestData::SERVICE . '_bis', $twofaccounts->last()->service);
+        $this->assertEquals(OtpTestData::ACCOUNT . '_bis', $twofaccounts->last()->account);
         $this->assertEquals(OtpTestData::SECRET, $twofaccounts->last()->secret);
         $this->assertEquals(OtpTestData::DIGITS_DEFAULT, $twofaccounts->last()->digits);
         $this->assertEquals(OtpTestData::PERIOD_DEFAULT, $twofaccounts->last()->period);
@@ -215,45 +193,144 @@ class TwoFAccountServiceTest extends FeatureTestCase
         $this->assertEquals(OtpTestData::ALGORITHM_DEFAULT, $twofaccounts->last()->algorithm);
     }
 
-
     /**
      * @test
      */
-    public function test_convert_migration_from_gauth_returns_flagged_duplicates()
+    public function test_migrate_from_gauth_returns_flagged_duplicates()
     {
+        $this->actingAs($this->user, 'api-guard');
+
         $parameters = [
             'service'   => OtpTestData::SERVICE,
             'account'   => OtpTestData::ACCOUNT,
-            'icon'      => OtpTestData::ICON,
+            'icon'      => OtpTestData::ICON_PNG,
             'otp_type'  => 'totp',
             'secret'    => OtpTestData::SECRET,
             'digits'    => OtpTestData::DIGITS_DEFAULT,
             'algorithm' => OtpTestData::ALGORITHM_DEFAULT,
             'period'    => OtpTestData::PERIOD_DEFAULT,
         ];
-        $twofaccount = new TwoFAccount;
-        $twofaccount->fillWithOtpParameters($parameters)->save();
 
-        $parameters['service'] = OtpTestData::SERVICE.'_bis';
-        $parameters['account'] = OtpTestData::ACCOUNT.'_bis';
+        TwoFAccount::factory()->for($this->user)->create($parameters);
 
-        $twofaccount = new TwoFAccount;
-        $twofaccount->fillWithOtpParameters($parameters)->save();
+        $parameters['service'] = OtpTestData::SERVICE . '_bis';
+        $parameters['account'] = OtpTestData::ACCOUNT . '_bis';
 
-        $twofaccounts = TwoFAccounts::migrate(OtpTestData::GOOGLE_AUTH_MIGRATION_URI);
+        TwoFAccount::factory()->for($this->user)->create($parameters);
+
+        $twofaccounts = TwoFAccounts::migrate(MigrationTestData::GOOGLE_AUTH_MIGRATION_URI);
 
         $this->assertEquals(-1, $twofaccounts->first()->id);
         $this->assertEquals(-1, $twofaccounts->last()->id);
     }
 
+    /**
+     * @test
+     */
+    public function test_migrate_invalid_migration_from_gauth_returns_InvalidMigrationData_exception()
+    {
+        $this->expectException(\App\Exceptions\InvalidMigrationDataException::class);
+        $twofaccounts = TwoFAccounts::migrate(MigrationTestData::GOOGLE_AUTH_MIGRATION_URI_WITH_INVALID_DATA);
+    }
 
     /**
      * @test
      */
-    public function test_convert_invalid_migration_from_gauth_returns_InvalidMigrationData_exception()
+    public function test_export_single_id_returns_collection()
     {
-        $this->expectException(\App\Exceptions\InvalidMigrationDataException::class);
-        $twofaccounts = TwoFAccounts::migrate(OtpTestData::GOOGLE_AUTH_MIGRATION_URI_WITH_INVALID_DATA);
+        $twofaccounts = TwoFAccounts::export($this->customTotpTwofaccount->id);
+
+        $this->assertContainsOnlyInstancesOf(TwoFAccount::class, $twofaccounts);
+        $this->assertObjectEquals($this->customTotpTwofaccount, $twofaccounts->first());
     }
 
+    /**
+     * @test
+     */
+    public function test_export_comma_separated_ids_returns_collection()
+    {
+        $twofaccounts = TwoFAccounts::export($this->customTotpTwofaccount->id . ',' . $this->customHotpTwofaccount->id);
+
+        $this->assertContainsOnlyInstancesOf(TwoFAccount::class, $twofaccounts);
+        $this->assertObjectEquals($this->customTotpTwofaccount, $twofaccounts->first());
+        $this->assertObjectEquals($this->customHotpTwofaccount, $twofaccounts->last());
+    }
+
+    /**
+     * @test
+     */
+    public function test_export_array_of_ids_returns_collection()
+    {
+        $twofaccounts = TwoFAccounts::export([$this->customTotpTwofaccount->id, $this->customHotpTwofaccount->id]);
+
+        $this->assertContainsOnlyInstancesOf(TwoFAccount::class, $twofaccounts);
+        $this->assertObjectEquals($this->customTotpTwofaccount, $twofaccounts->first());
+        $this->assertObjectEquals($this->customHotpTwofaccount, $twofaccounts->last());
+    }
+
+    /**
+     * @test
+     */
+    public function test_delete_comma_separated_ids()
+    {
+        $twofaccounts = TwoFAccount::factory()->count(2)->for($this->user)->create();
+
+        $this->assertDatabaseHas('twofaccounts', [
+            'id' => $twofaccounts[0]->id,
+        ]);
+        $this->assertDatabaseHas('twofaccounts', [
+            'id' => $twofaccounts[1]->id,
+        ]);
+
+        TwoFAccounts::delete($twofaccounts[0]->id . ',' . $twofaccounts[1]->id);
+
+        $this->assertDatabaseMissing('twofaccounts', [
+            'id' => $twofaccounts[0]->id,
+        ]);
+        $this->assertDatabaseMissing('twofaccounts', [
+            'id' => $twofaccounts[1]->id,
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function test_delete_array_of_ids()
+    {
+        $twofaccounts = TwoFAccount::factory()->count(2)->for($this->user)->create();
+
+        $this->assertDatabaseHas('twofaccounts', [
+            'id' => $twofaccounts[0]->id,
+        ]);
+        $this->assertDatabaseHas('twofaccounts', [
+            'id' => $twofaccounts[1]->id,
+        ]);
+
+        TwoFAccounts::delete([$twofaccounts[0]->id, $twofaccounts[1]->id]);
+
+        $this->assertDatabaseMissing('twofaccounts', [
+            'id' => $twofaccounts[0]->id,
+        ]);
+        $this->assertDatabaseMissing('twofaccounts', [
+            'id' => $twofaccounts[1]->id,
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function test_delete_single_id()
+    {
+        $twofaccount = TwoFAccount::factory()->for($this->user)->create();
+
+        $this->assertDatabaseHas('twofaccounts', [
+            'id' => $twofaccount->id,
+        ]);
+
+        TwoFAccounts::delete($twofaccount->id);
+
+        $this->assertDatabaseMissing('twofaccounts', [
+            'id' => $twofaccount->id,
+        ]);
+    }
 }

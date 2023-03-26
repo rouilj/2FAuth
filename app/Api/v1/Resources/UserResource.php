@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * @property mixed $id
  * @property string $name
  * @property string $email
+ * @property string $is_admin
  */
 class UserResource extends JsonResource
 {
@@ -20,9 +21,10 @@ class UserResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'    => $this->when($request->user(), $this->id),
-            'name'  => $this->name,
-            'email' => $this->when($request->user(), $this->email),
+            'id'       => $this->id,
+            'name'     => $this->name,
+            'email'    => $this->email,
+            'is_admin' => $this->is_admin,
         ];
     }
 }

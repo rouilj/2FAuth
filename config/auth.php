@@ -2,6 +2,10 @@
 
 return [
 
+    'throttle' => [
+        'login' => env('LOGIN_THROTTLE', 5),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Defaults
@@ -46,7 +50,7 @@ return [
     | users are actually retrieved out of your database or other storage
     | mechanisms used by this application to persist your user's data.
     |
-    | Supported: "session", "token"
+    | Supported: "session"
     |
     */
 
@@ -87,8 +91,9 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'eloquent-2fauth',
+            'driver' => 'eloquent-webauthn',
             'model' => App\Models\User::class,
+            // 'password_fallback' => true,
         ],
         'remote-user' => [
             'driver' => 'remote-user',
@@ -105,7 +110,7 @@ return [
     | than one user table or model in the application and you want to have
     | separate password reset settings based on the specific user types.
     |
-    | The expire time is the number of minutes that the reset token should be
+    | The expire time is the number of minutes that each reset token will be
     | considered valid. This security feature keeps tokens short-lived so
     | they have less time to be guessed. You may change this as needed.
     |
@@ -122,7 +127,7 @@ return [
         // for WebAuthn
         'webauthn' => [
             'provider' => 'users', // The user provider using WebAuthn.
-            'table' => 'web_authn_recoveries', // The table to store the recoveries.
+            'table' => 'webauthn_recoveries', // The table to store the recoveries.
             'expire' => 60,
             'throttle' => 60,
         ],

@@ -11,8 +11,6 @@ class RejectIfAuthenticated
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @param  string|null  ...$guards
      * @return mixed
      */
@@ -22,7 +20,7 @@ class RejectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return response()->json(['message' =>  __('auth.already_authenticated')], 400);
+                return response()->json(['message' => __('auth.already_authenticated')], 400);
             }
         }
 

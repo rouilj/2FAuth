@@ -9,8 +9,8 @@
             <label class="label">{{ $t('twofaccounts.icon') }}</label>
             <div class="field is-grouped">
                 <!-- i'm lucky button -->
-                <div class="control" v-if="$root.appSettings.getOfficialIcons">
-                    <v-button @click="fetchLogo" :color="'is-dark'" :nativeType="'button'" :isDisabled="form.service.length < 3">
+                <div class="control" v-if="$root.userPreferences.getOfficialIcons">
+                    <v-button @click="fetchLogo" :color="$root.showDarkMode ? 'is-dark' : ''" :nativeType="'button'" :isDisabled="form.service.length < 3">
                         <span class="icon is-small">
                             <font-awesome-icon :icon="['fas', 'globe']" />
                         </span>
@@ -19,7 +19,7 @@
                 </div>
                 <!-- upload button -->
                 <div class="control">
-                    <div role="button" tabindex="0" class="file is-dark" @keyup.enter="$refs.iconInputLabel.click()">
+                    <div role="button" tabindex="0" class="file" :class="$root.showDarkMode ? 'is-dark' : 'is-white'" @keyup.enter="$refs.iconInputLabel.click()">
                         <label class="file-label" ref="iconInputLabel">
                             <input aria-hidden="true" tabindex="-1" class="file-input" type="file" accept="image/*" v-on:change="uploadIcon" ref="iconInput">
                             <span class="file-cta">
@@ -29,8 +29,8 @@
                                 <span class="file-label">{{ $t('twofaccounts.forms.choose_image') }}</span>
                             </span>
                         </label>
-                        <span class="tag is-black is-large" v-if="tempIcon">
-                            <img class="icon-preview" :src="'/storage/icons/' + tempIcon" :alt="$t('twofaccounts.icon_to_illustrate_the_account')">
+                        <span class="tag is-large" :class="$root.showDarkMode ? 'is-dark' : 'is-white'" v-if="tempIcon">
+                            <img class="icon-preview" :src="$root.appConfig.subdirectory + '/storage/icons/' + tempIcon" :alt="$t('twofaccounts.icon_to_illustrate_the_account')">
                             <button class="clear-selection delete is-small" @click.prevent="deleteIcon" :aria-label="$t('twofaccounts.remove_icon')"></button>
                         </span>
                     </div>
@@ -38,7 +38,7 @@
             </div>
             <div class="field">
                 <field-error :form="form" field="icon" class="help-for-file" />
-                <p v-if="$root.appSettings.getOfficialIcons" class="help" v-html="$t('twofaccounts.forms.i_m_lucky_legend')"></p>
+                <p v-if="$root.userPreferences.getOfficialIcons" class="help" v-html="$t('twofaccounts.forms.i_m_lucky_legend')"></p>
             </div>
             <!-- otp type -->
             <form-toggle class="has-uppercased-button" :isDisabled="true" :form="form" :choices="otp_types" fieldName="otp_type" :label="$t('twofaccounts.forms.otp_type.label')" :help="$t('twofaccounts.forms.otp_type.help')" :hasOffset="true" />
@@ -46,25 +46,18 @@
                 <!-- secret -->
                 <label :for="this.inputId('text','secret')" class="label" v-html="$t('twofaccounts.forms.secret.label')"></label>
                 <div class="field has-addons">
-                    <p v-if="!secretIsLocked" class="control">
-                        <span class="select">
-                            <select @change="form.secret=''" v-model="secretIsBase32Encoded">
-                                <option v-for="(format)  in secretFormats" :key="format.value" :value="format.value">{{ format.text }}</option>
-                            </select>
-                        </span>
-                    </p>
                     <p class="control is-expanded">
                         <input :id="this.inputId('text','secret')" class="input" type="text" v-model="form.secret" :disabled="secretIsLocked">
                     </p>
                     <p class="control" v-if="secretIsLocked">
-                        <button type="button" class="button is-dark field-lock" @click.stop="secretIsLocked = false" :title="$t('twofaccounts.forms.unlock.title')">
+                        <button type="button" class="button field-lock" :class="{'is-dark' : $root.showDarkMode}" @click.stop="secretIsLocked = false" :title="$t('twofaccounts.forms.unlock.title')">
                             <span class="icon">
                                 <font-awesome-icon :icon="['fas', 'lock']" />
                             </span>
                         </button>
                     </p>
                     <p class="control" v-else>
-                        <button type="button" class="button is-dark field-unlock"  @click.stop="secretIsLocked = true" :title="$t('twofaccounts.forms.lock.title')">
+                        <button type="button" class="button field-unlock" :class="{'is-dark' : $root.showDarkMode}" @click.stop="secretIsLocked = true" :title="$t('twofaccounts.forms.lock.title')">
                             <span class="icon has-text-danger">
                                 <font-awesome-icon :icon="['fas', 'lock-open']" />
                             </span>
@@ -96,14 +89,14 @@
                                 <input class="input" type="text" placeholder="" v-model="form.counter" :disabled="counterIsLocked" />
                             </div>
                             <div class="control" v-if="counterIsLocked">
-                                <button type="button" class="button is-dark field-lock" @click="counterIsLocked = false" :title="$t('twofaccounts.forms.unlock.title')">
+                                <button type="button" class="button field-lock" :class="{'is-dark' : $root.showDarkMode}" @click="counterIsLocked = false" :title="$t('twofaccounts.forms.unlock.title')">
                                     <span class="icon">
                                         <font-awesome-icon :icon="['fas', 'lock']" />
                                     </span>
                                 </button>
                             </div>
                             <div class="control" v-else>
-                                <button type="button" class="button is-dark field-unlock"  @click="counterIsLocked = true" :title="$t('twofaccounts.forms.lock.title')">
+                                <button type="button" class="button field-unlock" :class="{'is-dark' : $root.showDarkMode}" @click="counterIsLocked = true" :title="$t('twofaccounts.forms.lock.title')">
                                     <span class="icon has-text-danger">
                                         <font-awesome-icon :icon="['fas', 'lock-open']" />
                                     </span>
@@ -141,7 +134,6 @@
     import Modal from '../../components/Modal'
     import Form from './../../components/Form'
     import OtpDisplayer from '../../components/OtpDisplayer'
-    import Base32 from "hi-base32"
 
     export default {
         data() {
@@ -150,7 +142,6 @@
                 counterIsLocked: true,
                 twofaccountExists: false,
                 tempIcon: '',
-                secretIsBase32Encoded: null,
                 form: new Form({
                     service: '',
                     account: '',
@@ -175,10 +166,6 @@
                     { text: 8, value: 8 },
                     { text: 9, value: 9 },
                     { text: 10, value: 10 },
-                ],
-                secretFormats: [
-                    { text: this.$t('twofaccounts.forms.plain_text'), value: 0 },
-                    { text: 'Base32', value: 1 }
                 ],
                 algorithms: [
                     { text: 'sha1', value: 'sha1' },
@@ -214,7 +201,6 @@
                 const { data } = await this.axios.get('/api/v1/twofaccounts/' + this.$route.params.twofaccountId)
 
                 this.form.fill(data)
-                this.secretIsBase32Encoded = 1
                 this.twofaccountExists = true
 
                 // set account icon as temp icon
@@ -234,9 +220,6 @@
                     this.tempIcon = oldIcon
                     this.deleteIcon()
                 }
-
-                // Secret to base32 if necessary
-                this.form.secret = this.secretIsBase32Encoded ? this.form.secret : Base32.encode(this.form.secret).toString();
 
                 await this.form.put('/api/v1/twofaccounts/' + this.$route.params.twofaccountId)
 
@@ -275,7 +258,7 @@
             },
 
             fetchLogo() {
-                if (this.$root.appSettings.getOfficialIcons) {
+                if (this.$root.userPreferences.getOfficialIcons) {
                     this.axios.post('/api/v1/icons/default', {service: this.form.service}, {returnError: true}).then(response => {
                         if (response.status === 201) {
                             // clean possible already uploaded temp icon

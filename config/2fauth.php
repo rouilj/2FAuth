@@ -9,10 +9,9 @@ return [
     |
     */
 
-    'version' => '3.4.0',
+    'version' => '4.0.0-beta.1',
     'repository' => 'https://github.com/Bubka/2FAuth',
     'latestReleaseUrl' => 'https://api.github.com/repos/Bubka/2FAuth/releases/latest',
-
 
     /*
     |--------------------------------------------------------------------------
@@ -26,6 +25,18 @@ return [
         'isTestingApp' => env('IS_TESTING_APP', false),
         'trustedProxies' => env('TRUSTED_PROXIES', null),
         'proxyLogoutUrl' => env('PROXY_LOGOUT_URL', null),
+        'appSubdirectory' => env('APP_SUBDIRECTORY', ''),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | 2FAuth API config
+    |--------------------------------------------------------------------------
+    |
+    */
+
+    'api' => [
+        'throttle' => env('THROTTLE_API', 60),
     ],
 
     /*
@@ -40,36 +51,52 @@ return [
         'fr',
         'de',
         'zh',
-        'es'
+        'es',
+        'bg',
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Application fallback for user options
+    | Default values for app (global) settings
+    | These settings can be overloaded and persisted using the SettingService
     |--------------------------------------------------------------------------
     |
     */
 
-    'options' => [
+    'settings' => [
+        'useEncryption' => false,
+        'checkForUpdate' => true,
+        'lastRadarScan' => 0,
+        'latestRelease' => false,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default values for user preferences
+    | These settings can be overloaded and persisted by each user
+    |--------------------------------------------------------------------------
+    |
+    */
+
+    'preferences' => [
         'showTokenAsDot' => false,
         'closeOtpOnCopy' => false,
         'copyOtpOnDisplay' => false,
         'useBasicQrcodeReader' => false,
         'displayMode' => 'list',
         'showAccountsIcons' => true,
-        'kickUserAfter' => '15',
+        'kickUserAfter' => 15,
         'activeGroup' => 0,
         'rememberActiveGroup' => true,
         'defaultGroup' => 0,
-        'useEncryption' => false,
         'defaultCaptureMode' => 'livescan',
         'useDirectCapture' => false,
-        'useWebauthnAsDefault' => false,
         'useWebauthnOnly' => false,
         'getOfficialIcons' => true,
-        'checkForUpdate' => true,
-        'lastRadarScan' => 0,
-        'latestRelease' => false,
+        'theme' => 'system',
+        'formatPassword' => true,
+        'formatPasswordBy' => 0.5,
+        'lang' => 'browser',
     ],
 
 ];

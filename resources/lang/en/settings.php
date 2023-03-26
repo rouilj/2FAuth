@@ -14,15 +14,20 @@ return [
     */
 
     'settings' => 'Settings',
+    'preferences' => 'Preferences',
     'account' => 'Account',
     'oauth' => 'OAuth',
     'webauthn' => 'WebAuthn',
     'tokens' => 'Tokens',
     'options' => 'Options',
-    'user_options' => 'User options',
+    'user_preferences' => 'User preferences',
+    'admin_settings' => 'Admin settings',
     'confirm' => [
 
     ],
+    'administration' => 'Administration',
+    'administration_legend' => 'While previous settings are user settings (every user can set its own preferences), following settings are global and apply to all users. Only an administrator can view and edit those settings.',
+    'you_are_administrator' => 'You are an administrator',
     'general' => 'General',
     'security' => 'Security',
     'profile' => 'Profile',
@@ -68,8 +73,25 @@ return [
             'label' => 'Display mode',
             'help' => 'Choose whether you want accounts to be displayed as a list or as a grid'
         ],
+        'password_format' => [
+            'label' => 'Password formatting',
+            'help' => 'Change how the passwords are displayed by grouping digits to ease readability and memorization'
+        ],
+        'pair' => 'by Pair',
+        'pair_legend' => 'Group digits two by two',
+        'trio_legend' => 'Group digits three by three',
+        'half_legend' => 'Split digits into two equals groups',
+        'trio' => 'by Trio',
+        'half' => 'by Half',
         'grid' => 'Grid',
         'list' => 'List',
+        'theme' => [
+            'label' => 'Theme',
+            'help' => 'Force a specific theme or apply the theme defined in your system/browser preferences'
+        ],
+        'light' => 'Light',
+        'dark' => 'Dark',
+        'automatic' => 'Auto',
         'show_accounts_icons' => [
             'label' => 'Show icons',
             'help' => 'Show icons accounts in the main view'

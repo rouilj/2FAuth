@@ -4,26 +4,28 @@ namespace Tests\Api\v1\Requests;
 
 use App\Api\v1\Requests\TwoFAccountBatchRequest;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
 
+/**
+ * @covers \App\Api\v1\Requests\TwoFAccountBatchRequest
+ */
 class TwoFAccountBatchRequestTest extends TestCase
 {
-
     use WithoutMiddleware;
 
     /**
      * @test
      */
     public function test_user_is_authorized()
-    {   
+    {
         Auth::shouldReceive('check')
-        ->once()
-        ->andReturn(true);
+            ->once()
+            ->andReturn(true);
 
         $request = new TwoFAccountBatchRequest();
-    
+
         $this->assertTrue($request->authorize());
     }
 
@@ -32,7 +34,7 @@ class TwoFAccountBatchRequestTest extends TestCase
      */
     public function test_valid_data(array $data) : void
     {
-        $request = new TwoFAccountBatchRequest();
+        $request   = new TwoFAccountBatchRequest();
         $validator = Validator::make($data, $request->rules());
 
         $this->assertFalse($validator->fails());
@@ -45,10 +47,10 @@ class TwoFAccountBatchRequestTest extends TestCase
     {
         return [
             [[
-                'ids' => '1'
+                'ids' => '1',
             ]],
             [[
-                'ids' => '1,2,5'
+                'ids' => '1,2,5',
             ]],
         ];
     }
@@ -58,7 +60,7 @@ class TwoFAccountBatchRequestTest extends TestCase
      */
     public function test_invalid_data(array $data) : void
     {
-        $request = new TwoFAccountBatchRequest();
+        $request   = new TwoFAccountBatchRequest();
         $validator = Validator::make($data, $request->rules());
 
         $this->assertTrue($validator->fails());
@@ -71,42 +73,41 @@ class TwoFAccountBatchRequestTest extends TestCase
     {
         return [
             [[
-                'ids' => '' // required
+                'ids' => '', // required
             ]],
             [[
-                'ids' => null // required
+                'ids' => null, // required
             ]],
             [[
-                'ids' => true // string
+                'ids' => true, // string
             ]],
             [[
-                'ids' => 10 // string
+                'ids' => 10, // string
             ]],
             [[
-                'ids' => 'notaCommaSeparatedList' // regex
+                'ids' => 'notaCommaSeparatedList', // regex
             ]],
             [[
-                'ids' => 'a,b' // regex
+                'ids' => 'a,b', // regex
             ]],
             [[
-                'ids' => 'a,1' // regex
+                'ids' => 'a,1', // regex
             ]],
             [[
-                'ids' => ',1,2' // regex
+                'ids' => ',1,2', // regex
             ]],
             [[
-                'ids' => '1,,2' // regex
+                'ids' => '1,,2', // regex
             ]],
             [[
-                'ids' => '1,2,' // regex
+                'ids' => '1,2,', // regex
             ]],
             [[
-                'ids' => ',1,2,' // regex
+                'ids' => ',1,2,', // regex
             ]],
             [[
-                'ids' => '1;2' // regex
+                'ids' => '1;2', // regex
             ]],
         ];
     }
-
 }

@@ -11,16 +11,16 @@ class RejectIfReverseProxy
      * Handle an incoming request.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @return mixed
      */
     public function handle($request, Closure $next)
     {
         if (config('auth.defaults.guard') === 'reverse-proxy-guard') {
-            Log::info('Cannot request this action in Demo mode');
+            Log::info('Cannot request this action in reverse proxy mode');
 
             return response()->json([
-                'message' => __('errors.unsupported_with_reverseproxy')], 400);
+                'message' => __('errors.unsupported_with_reverseproxy'),
+            ], 400);
         }
 
         return $next($request);

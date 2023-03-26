@@ -1,22 +1,23 @@
 <template>
-    <div v-if="username">
+    <div>
         <!-- webauthn authentication -->
-        <form-wrapper v-if="showWebauthn" :title="$t('auth.forms.webauthn_login')" :punchline="punchline">
+        <form-wrapper v-if="showWebauthn" :title="$t('auth.forms.webauthn_login')" :punchline="$t('auth.welcome_to_2fauth')">
             <div class="field">
                 {{ $t('auth.webauthn.use_security_device_to_sign_in') }}
             </div>
-            <div class="control">
-                <button id="btnContinue" type="button" class="button is-link" @click="webauthnLogin">{{ $t('commons.continue') }}</button>
-            </div>
+            <form id="frmWebauthnLogin" @submit.prevent="webauthnLogin" @keydown="form.onKeydown($event)">
+                <form-field :form="form" fieldName="email" inputType="email" :label="$t('auth.forms.email')" autofocus />
+                <form-buttons :isBusy="form.isBusy" :caption="$t('commons.continue')" :submitId="'btnContinue'"/>
+            </form>
             <div class="nav-links">
                 <p>{{ $t('auth.webauthn.lost_your_device') }}&nbsp;<router-link id="lnkRecoverAccount" :to="{ name: 'webauthn.lost' }" class="is-link">{{ $t('auth.webauthn.recover_your_account') }}</router-link></p>
-                <p v-if="!this.$root.appSettings.useWebauthnOnly">{{ $t('auth.sign_in_using') }}&nbsp;
-                    <a id="lnkSignWithLegacy" role="button" class="is-link" @keyup.enter="showWebauthn = false" @click="showWebauthn = false" tabindex="0">{{ $t('auth.login_and_password') }}</a>
+                <p v-if="!this.$root.userPreferences.useWebauthnOnly">{{ $t('auth.sign_in_using') }}&nbsp;
+                    <a id="lnkSignWithLegacy" role="button" class="is-link" @keyup.enter="toggleForm" @click="toggleForm" tabindex="0">{{ $t('auth.login_and_password') }}</a>
                 </p>
             </div>
         </form-wrapper>
         <!-- login/password legacy form -->
-        <form-wrapper v-else :title="$t('auth.forms.login')" :punchline="punchline">
+        <form-wrapper v-else :title="$t('auth.forms.login')" :punchline="$t('auth.welcome_to_2fauth')">
             <div v-if="isDemo" class="notification is-info has-text-centered is-radiusless" v-html="$t('auth.forms.welcome_to_demo_app_use_those_credentials')" />
             <div v-if="isTesting" class="notification is-warning has-text-centered is-radiusless" v-html="$t('auth.forms.welcome_to_testing_app_use_those_credentials')" />
             <form id="frmLegacyLogin" @submit.prevent="handleSubmit" @keydown="form.onKeydown($event)">
@@ -25,15 +26,11 @@
                 <form-buttons :isBusy="form.isBusy" :caption="$t('auth.sign_in')" :submitId="'btnSignIn'"/>
             </form>
             <div class="nav-links">
-                <div v-if="!username">
-                    <p>{{ $t('auth.forms.dont_have_account_yet') }}&nbsp;<router-link id="lnkRegister" :to="{ name: 'register' }" class="is-link">{{ $t('auth.register') }}</router-link></p>
-                </div>
-                <div v-else>
-                    <p>{{ $t('auth.forms.forgot_your_password') }}&nbsp;<router-link id="lnkResetPwd" :to="{ name: 'password.request' }" class="is-link" :aria-label="$t('auth.forms.reset_your_password')">{{ $t('auth.forms.request_password_reset') }}</router-link></p>
-                    <p >{{ $t('auth.sign_in_using') }}&nbsp;
-                        <a id="lnkSignWithWebauthn" role="button" class="is-link" @keyup.enter="showWebauthn = true" @click="showWebauthn = true" tabindex="0" :aria-label="$t('auth.sign_in_using_security_device')">{{ $t('auth.webauthn.security_device') }}</a>
-                    </p>
-                </div>
+                <p>{{ $t('auth.forms.forgot_your_password') }}&nbsp;<router-link id="lnkResetPwd" :to="{ name: 'password.request' }" class="is-link" :aria-label="$t('auth.forms.reset_your_password')">{{ $t('auth.forms.request_password_reset') }}</router-link></p>
+                <p >{{ $t('auth.sign_in_using') }}&nbsp;
+                    <a id="lnkSignWithWebauthn" role="button" class="is-link" @keyup.enter="toggleForm" @click="toggleForm" tabindex="0" :aria-label="$t('auth.sign_in_using_security_device')">{{ $t('auth.webauthn.security_device') }}</a>
+                </p>
+                <p class="mt-4">{{ $t('auth.forms.dont_have_account_yet') }}&nbsp;<router-link id="lnkRegister" :to="{ name: 'register' }" class="is-link">{{ $t('auth.register') }}</router-link></p>
             </div>
         </form-wrapper>
         <!-- footer -->
@@ -44,11 +41,11 @@
 <script>
 
     import Form from './../../components/Form'
+    import WebAuthn from './../../components/WebAuthn'
 
     export default {
         data(){
             return {
-                username: null,
                 isDemo: this.$root.isDemoApp,
                 isTesting: this.$root.isTestingApp,
                 form: new Form({
@@ -56,22 +53,26 @@
                     password: ''
                 }),
                 isBusy: false,
-                showWebauthn: this.$root.appSettings.useWebauthnAsDefault || this.$root.appSettings.useWebauthnOnly,
+                showWebauthn: this.$root.userPreferences.useWebauthnOnly,
                 csrfRefresher: null,
-            }
-        },
-
-        computed : {
-            punchline: function() {
-                return this.isDemo ? '' : this.$t('auth.welcome_back_x', [this.username])
+                webauthn: new WebAuthn()
             }
         },
 
         mounted: function() {
-            this.csrfRefresher = setInterval(this.refreshToken, 300000); // 5 min
+            this.csrfRefresher = setInterval(this.refreshToken, 300000) // 5 min
+            this.showWebauthn = this.$storage.get('showWebauthnForm', false)
         },
 
         methods : {
+            /**
+             * Toggle the form between legacy and webauthn method
+             */
+            toggleForm() {
+                this.showWebauthn = ! this.showWebauthn
+                this.$storage.set('showWebauthnForm', this.showWebauthn)
+            },
+
             /**
              * Sign in using the login/password form
              */
@@ -80,6 +81,7 @@
 
                 this.form.post('/user/login', {returnError: true})
                 .then(response => {
+                    this.applyPreferences(response.data.preferences);
                     this.$router.push({ name: 'accounts', params: { toRefresh: true } })
                 })
                 .catch(error => {
@@ -107,23 +109,40 @@
                 }
 
                 // Check browser support
-                if (!window.PublicKeyCredential) {
+                if (this.webauthn.doesntSupportWebAuthn) {
                     this.$notify({ type: 'is-danger', text: this.$t('errors.browser_does_not_support_webauthn') })
                     return false
                 }
 
-                const loginOptions = await this.axios.post('/webauthn/login/options').then(res => res.data)
-                const publicKey = this.parseIncomingServerOptions(loginOptions)
+                const loginOptions = await this.form.post('/webauthn/login/options').then(res => res.data)
+                const publicKey = this.webauthn.parseIncomingServerOptions(loginOptions)
                 const credentials = await navigator.credentials.get({ publicKey: publicKey })
                 .catch(error => {
-                    this.$notify({ type: 'is-danger', text: this.$t('auth.webauthn.unknown_device') })
+                    if (error.name == 'AbortError') {
+                        this.$notify({ type: 'is-warning', text: this.$t('errors.aborted_by_user') })
+                    }
+                    else if (error.name == 'SecurityError') {
+                        this.$notify({ type: 'is-danger', text: this.$t('errors.security_error_check_rpid') })
+                    }
+                    else if (error.name == 'NotAllowedError') {
+                        this.$notify({ type: 'is-danger', text: this.$t('errors.not_allowed_operation') })
+                    }
+                    else if (error.name == 'NotSupportedError') {
+                        this.$notify({ type: 'is-danger', text: this.$t('errors.unsupported_operation') })
+                    }
+                    else if (error.name == 'InvalidStateError') {
+                        this.$notify({ type: 'is-danger', text: this.$t('auth.webauthn.unknown_device') })
+                    }
+                    else this.$notify({ type: 'is-danger', text: this.$t('errors.unknown_error') })
                 })
 
                 if (!credentials) return false
 
-                const publicKeyCredential = this.parseOutgoingCredentials(credentials)
+                let publicKeyCredential = this.webauthn.parseOutgoingCredentials(credentials)
+                publicKeyCredential.email = this.form.email
 
                 this.axios.post('/webauthn/login', publicKeyCredential, {returnError: true}).then(response => {
+                    this.applyPreferences(response.data.preferences);
                     this.$router.push({ name: 'accounts', params: { toRefresh: true } })
                 })
                 .catch(error => {
@@ -147,25 +166,9 @@
 
         beforeRouteEnter (to, from, next) {
             if (to.params.forceRefresh && from.name !== null) {
-                window.location.href = to.path;
+                window.location.href = "." + to.path;
                 return;
             }
-
-            next(async vm => {
-                const { data } = await vm.axios.get('api/v1/user/name')
-
-                if( data.name ) {
-                    // The email property is only sent when the user is logged in.
-                    // In this case we push the user to the index view.
-                    if( data.email ) {
-                        return next({ name: 'accounts' });
-                    }
-                    vm.username = data.name
-                }
-                else {
-                    return next({ name: 'register' });
-                }
-            });
 
             next();
         },

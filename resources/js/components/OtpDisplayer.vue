@@ -1,12 +1,12 @@
 <template>
     <div>
         <figure class="image is-64x64" :class="{ 'no-icon': !internal_icon }" style="display: inline-block">
-            <img :src="'/storage/icons/' + internal_icon" v-if="internal_icon" :alt="$t('twofaccounts.icon_to_illustrate_the_account')">
+            <img :src="$root.appConfig.subdirectory + '/storage/icons/' + internal_icon" v-if="internal_icon" :alt="$t('twofaccounts.icon_to_illustrate_the_account')">
         </figure>
-        <p class="is-size-4 has-text-grey-light has-ellipsis">{{ internal_service }}</p>
-        <p class="is-size-6 has-text-grey has-ellipsis">{{ internal_account }}</p>
+        <p class="is-size-4 has-ellipsis" :class="$root.showDarkMode ? 'has-text-grey-light' : 'has-text-grey'">{{ internal_service }}</p>
+        <p class="is-size-6 has-ellipsis" :class="$root.showDarkMode ? 'has-text-grey' : 'has-text-grey-light'">{{ internal_account }}</p>
         <p>
-            <span role="log" ref="otp" tabindex="0" class="otp is-size-1 has-text-white is-clickable px-3" @click="copyOTP(internal_password)" @keyup.enter="copyOTP(internal_password)" :title="$t('commons.copy_to_clipboard')">
+            <span role="log" ref="otp" tabindex="0" class="otp is-size-1 is-clickable px-3" :class="$root.showDarkMode ? 'has-text-white' : 'has-text-grey-dark'" @click="copyOTP(internal_password)" @keyup.enter="copyOTP(internal_password)" :title="$t('commons.copy_to_clipboard')">
                 {{ displayedOtp }}
             </span>
         </p>
@@ -60,13 +60,17 @@
         },
 
         computed: {
+
             displayedOtp() {
                 let pwd = this.internal_password
-                if (this.internal_otp_type !== 'steamtotp') {
-                    const spacePosition = Math.ceil(this.internal_password.length / 2)
-                    pwd = this.internal_password.substr(0, spacePosition) + " " + this.internal_password.substr(spacePosition)
+                if (this.$root.userPreferences.formatPassword && pwd.length > 0) {
+                    const x = Math.ceil(this.$root.userPreferences.formatPasswordBy < 1 ? pwd.length * this.$root.userPreferences.formatPasswordBy : this.$root.userPreferences.formatPasswordBy)
+                    const chunks = pwd.match(new RegExp(`.{1,${x}}`, 'g'));
+                    if (chunks) {
+                        pwd = chunks.join(' ')
+                    }
                 }
-                return this.$root.appSettings.showOtpAsDot ? pwd.replace(/[0-9]/g, '●') : pwd
+                return this.$root.userPreferences.showOtpAsDot ? pwd.replace(/[0-9]/g, '●') : pwd
             },
         },
 
@@ -90,10 +94,10 @@
                 const success = this.$clipboard(rawOTP)
 
                 if (success == true) {
-                    if(this.$root.appSettings.kickUserAfter == -1) {
+                    if(this.$root.userPreferences.kickUserAfter == -1) {
                         this.appLogout()
                     }
-                    else if(this.$root.appSettings.closeOtpOnCopy) {
+                    else if(this.$root.userPreferences.closeOtpOnCopy) {
                         this.$parent.isActive = false
                         this.clearOTP()
                     }
@@ -210,7 +214,7 @@
                     }
 
                     await this.axios(request).then(response => {
-                        if(this.$root.appSettings.copyOtpOnDisplay) {
+                        if(this.$root.userPreferences.copyOtpOnDisplay) {
                             this.copyOTP(response.data.password)
                         }
                         password = response.data

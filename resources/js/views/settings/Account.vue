@@ -3,6 +3,9 @@
         <setting-tabs :activeTab="'settings.account'"></setting-tabs>
         <div class="options-tabs">
             <form-wrapper>
+                <div v-if="isAdmin" class="notification is-warning">
+                    {{ $t('settings.you_are_administrator') }}
+                </div>
                 <form @submit.prevent="submitProfile" @keydown="formProfile.onKeydown($event)">
                     <div v-if="isRemoteUser" class="notification is-warning has-text-centered" v-html="$t('auth.user_account_controlled_by_proxy')" />
                     <h4 class="title is-4 has-text-grey-light">{{ $t('settings.profile') }}</h4>
@@ -37,7 +40,7 @@
         <vue-footer :showButtons="true">
             <!-- Cancel button -->
             <p class="control">
-                <button class="button is-dark is-rounded" @click.stop="exitSettings">
+                <button class="button is-rounded" :class="{'is-dark' : $root.showDarkMode}" @click.stop="exitSettings">
                     {{ $t('commons.close') }}
                 </button>
             </p>
@@ -65,14 +68,15 @@
                 formDelete: new Form({
                     password : '',
                 }),
-                isRemoteUser: false,
+                isRemoteUser: this.$root.appConfig.proxyAuth,
+                isAdmin: false,
             }
         },
 
         async mounted() {
             const { data } = await this.formProfile.get('/api/v1/user')
 
-            if( data.id === null ) this.isRemoteUser = true
+            if( data.is_admin === true ) this.isAdmin = true
 
             this.formProfile.fill(data)
         },

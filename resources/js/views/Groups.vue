@@ -12,10 +12,10 @@
             </router-link>
         </div>
         <div v-if="groups.length > 0">
-            <div v-for="group in groups" :key="group.id" class="group-item has-text-light is-size-5 is-size-6-mobile">
+            <div v-for="group in groups" :key="group.id" class="group-item is-size-5 is-size-6-mobile">
                 {{ group.name }}
                 <!-- delete icon -->
-                <button class="button tag is-dark is-pulled-right" @click="deleteGroup(group.id)"  :title="$t('commons.delete')">
+                <button class="button tag is-pulled-right" :class="$root.showDarkMode ? 'is-dark' : 'is-white'" @click="deleteGroup(group.id)"  :title="$t('commons.delete')">
                     {{ $t('commons.delete') }}
                 </button>
                 <!-- edit link -->
@@ -37,7 +37,7 @@
         <vue-footer :showButtons="true">
             <!-- close button -->
             <p class="control">
-                <router-link  :to="{ name: 'accounts', params: { toRefresh: true } }" class="button is-dark is-rounded">{{ $t('commons.close') }}</router-link>
+                <router-link  :to="{ name: 'accounts', params: { toRefresh: true } }" class="button is-rounded" :class="{'is-dark' : $root.showDarkMode}">{{ $t('commons.close') }}</router-link>
             </p>
         </vue-footer>
     </responsive-width-wrapper>
@@ -97,19 +97,19 @@
             /**
              * Delete a group (after confirmation)
              */
-            deleteGroup(id) {
+            async deleteGroup(id) {
                 if(confirm(this.$t('groups.confirm.delete'))) {
-                    this.axios.delete('/api/v1/groups/' + id)
+                    await this.axios.delete('/api/v1/groups/' + id).then(response => {
+                        // Remove the deleted group from the collection
+                        this.groups = this.groups.filter(a => a.id !== id)
+                        this.$notify({ type: 'is-success', text: this.$t('groups.group_successfully_deleted') })
 
-                    // Remove the deleted group from the collection
-                    this.groups = this.groups.filter(a => a.id !== id)
-                    this.$notify({ type: 'is-success', text: this.$t('groups.group_successfully_deleted') })
-
-                    // Reset persisted group filter to 'All' (groupId=0)
-                    // (backend will save to change automatically)
-                    if( parseInt(this.$root.appSettings.activeGroup) === id ) {
-                        this.$root.appSettings.activeGroup = 0
-                    }
+                        // Reset persisted group filter to 'All' (groupId=0)
+                        // (backend will save to change automatically)
+                        if( parseInt(this.$root.userPreferences.activeGroup) === id ) {
+                            this.$root.userPreferences.activeGroup = 0
+                        }
+                    })
                 }
             }
 

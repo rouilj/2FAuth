@@ -6,24 +6,16 @@
 namespace App\Extensions;
 
 use App\Models\User;
+use Exception;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\UserProvider;
-use Illuminate\Support\Arr;
-use Exception;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class RemoteUserProvider implements UserProvider
 {
-    // 2FAuth is single user by design and domain data are not coupled to the user model.
-    // So the RemoteUserProvider provides a non-persisted user, dynamically instanciated using data
-    // from the auth proxy.
-    //
-    // This way no matter the user data set at proxy level, 2FAuth will always
-    // authenticate a request from the proxy and will return domain data without restriction.
-    //
-    // The downside of this approach is that we have to be sure that no change that needs
-    // to be persisted will be made to the user instance afterward (i.e through middlewares).
-
-
     /**
      * The currently authenticated user.
      *
@@ -31,54 +23,84 @@ class RemoteUserProvider implements UserProvider
      */
     protected $user;
 
-
     /**
-     * Get the In-memory user
-     * 
-     * @return \App\Models\User
-     */
-    protected function getInMemoryUser()
-    {
-        if (is_null($this->user)) {
-            $this->user = new User;
-            $this->user->name = 'Remote User';
-            $this->user->email = 'fake.email@do.not.use';
-        }
-        
-        return $this->user;
-    }
-
-
-    /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function retrieveById($identifier)
     {
-        $user = $this->getInMemoryUser();
+        // We don't know the id length so we trim it to prevent to long strings in DB
+        $name  = substr($identifier['id'], 0, 191);
+        $email = null;
 
-        if (Arr::has($identifier, 'user')) {
-            $user->name = $identifier['user'];
+        $user = User::where('name', $name)->first();
+
+        // We use the passed email only if it is valid and no account is using it.
+        if ($identifier['email']) {
+            try {
+                $validated = Validator::validate([
+                    'email' => $identifier['email'],
+                ], [
+                    'email' => 'email',
+                ]);
+
+                if (User::where('id', '<>', $user->id ?? 0)->where('email', $identifier['email'])->count() == 0) {
+                    $email = strtolower($identifier['email']);
+                }
+            } catch (ValidationException $e) {
+                // do nothing
+            }
         }
-        if (Arr::has($identifier, 'email')) {
-            $user->email = $identifier['email'];
+
+        if (is_null($user)) {
+            $email = $email ?? $this->fakeRemoteEmail($identifier['id']);
+
+            $user = User::create([
+                'name'     => $name,
+                'email'    => strtolower($email),
+                'password' => bcrypt(Str::random(64)),
+            ]);
+
+            Log::info(sprintf('Remote user %s created with email address %s', var_export($user->name, true), var_export($user->email, true)));
+
+            if (User::count() === 1) {
+                $user->is_admin = true;
+                $user->save();
+            }
+        } else {
+            // Here we keep the account's email sync-ed
+            if ($email && $user->email != $email) {
+                $user->email = $email;
+                $user->save();
+            }
         }
 
         return $user;
     }
 
     /**
-     * @inheritDoc
-     * 
+     * Set a fake email address
+     *
+     * @param    $id mixed
+     * @return string
+     */
+    protected function fakeRemoteEmail(mixed $id)
+    {
+        return substr($id, 0, 184) . '@remote';
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @codeCoverageIgnore
      */
     public function retrieveByToken($identifier, $token)
     {
-        return $this->retrieveById($identifier);
+        throw new Exception(sprintf('No implementation for %s', __METHOD__));
     }
 
     /**
-     * @inheritDoc
-     * 
+     * {@inheritDoc}
+     *
      * @codeCoverageIgnore
      */
     public function updateRememberToken(Authenticatable $user, $token)
@@ -87,22 +109,22 @@ class RemoteUserProvider implements UserProvider
     }
 
     /**
-     * @inheritDoc
-     * 
+     * {@inheritDoc}
+     *
      * @codeCoverageIgnore
      */
     public function retrieveByCredentials(array $credentials)
     {
-        return $this->getInMemoryUser();
+        throw new Exception(sprintf('No implementation for %s', __METHOD__));
     }
 
     /**
-     * @inheritDoc
-     * 
+     * {@inheritDoc}
+     *
      * @codeCoverageIgnore
      */
     public function validateCredentials(Authenticatable $user, array $credentials)
     {
-        return true;
+        throw new Exception(sprintf('No implementation for %s', __METHOD__));
     }
 }

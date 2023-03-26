@@ -3,10 +3,11 @@
 namespace Tests\Classes;
 
 use Illuminate\Http\Testing\File;
-use Tests\Classes\OtpTestData;
+use Tests\Data\MigrationTestData;
+use Tests\Data\OtpTestData;
 
-class LocalFileFactory {
-
+class LocalFileFactory
+{
     /**
      * Create a new local valid qrcode image.
      *
@@ -27,7 +28,6 @@ class LocalFileFactory {
             fwrite($temp, ob_get_clean());
         }));
     }
-
 
     /**
      * Create a new local invalid qrcode image.
@@ -50,7 +50,6 @@ class LocalFileFactory {
         }));
     }
 
-
     /**
      * Create a new local valid Aegis JSON file.
      *
@@ -61,12 +60,11 @@ class LocalFileFactory {
         return new File('validAegisMigration.json', tap(tmpfile(), function ($temp) {
             ob_start();
 
-            echo OtpTestData::AEGIS_JSON_MIGRATION_PAYLOAD;
+            echo MigrationTestData::VALID_AEGIS_JSON_MIGRATION_PAYLOAD;
 
             fwrite($temp, ob_get_clean());
         }));
     }
-
 
     /**
      * Create a new local invalid Aegis JSON file.
@@ -78,12 +76,11 @@ class LocalFileFactory {
         return new File('invalidAegisMigration.json', tap(tmpfile(), function ($temp) {
             ob_start();
 
-            echo OtpTestData::INVALID_AEGIS_JSON_MIGRATION_PAYLOAD;
+            echo MigrationTestData::INVALID_AEGIS_JSON_MIGRATION_PAYLOAD;
 
             fwrite($temp, ob_get_clean());
         }));
     }
-
 
     /**
      * Create a new local encrypted Aegis JSON file.
@@ -95,12 +92,11 @@ class LocalFileFactory {
         return new File('encryptedAegisJsonFile.txt', tap(tmpfile(), function ($temp) {
             ob_start();
 
-            echo OtpTestData::ENCRYPTED_AEGIS_JSON_MIGRATION_PAYLOAD;
+            echo MigrationTestData::ENCRYPTED_AEGIS_JSON_MIGRATION_PAYLOAD;
 
             fwrite($temp, ob_get_clean());
         }));
     }
-
 
     /**
      * Create a new local valid Plain Text file.
@@ -121,7 +117,6 @@ class LocalFileFactory {
             fwrite($temp, ob_get_clean());
         }));
     }
-
 
     /**
      * Create a new local valid Plain Text file with new lines.
@@ -147,7 +142,6 @@ class LocalFileFactory {
         }));
     }
 
-
     /**
      * Create a new local invalid Plain Text file with no URI.
      *
@@ -165,7 +159,6 @@ class LocalFileFactory {
             fwrite($temp, ob_get_clean());
         }));
     }
-
 
     /**
      * Create a new local invalid Plain Text file with invalid line.
@@ -187,7 +180,6 @@ class LocalFileFactory {
         }));
     }
 
-
     /**
      * Create a new local invalid Plain Text file with invalid URI.
      *
@@ -208,7 +200,6 @@ class LocalFileFactory {
         }));
     }
 
-
     /**
      * Create a new local empty Plain Text file.
      *
@@ -224,6 +215,4 @@ class LocalFileFactory {
             fwrite($temp, ob_get_clean());
         }));
     }
-
-    
 }

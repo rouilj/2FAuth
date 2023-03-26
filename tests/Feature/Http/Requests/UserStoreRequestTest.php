@@ -3,6 +3,7 @@
 namespace Tests\Feature\Http\Requests;
 
 use App\Http\Requests\UserStoreRequest;
+use App\Models\User;
 use Illuminate\Foundation\Testing\WithoutMiddleware;
 use Illuminate\Support\Facades\Validator;
 use Tests\FeatureTestCase;
@@ -12,7 +13,6 @@ use Tests\FeatureTestCase;
  */
 class UserStoreRequestTest extends FeatureTestCase
 {
-
     use WithoutMiddleware;
 
     /**
@@ -21,7 +21,7 @@ class UserStoreRequestTest extends FeatureTestCase
     public function test_user_is_authorized()
     {
         $request = new UserStoreRequest();
-    
+
         $this->assertTrue($request->authorize());
     }
 
@@ -30,7 +30,12 @@ class UserStoreRequestTest extends FeatureTestCase
      */
     public function test_valid_data(array $data) : void
     {
-        $request = new UserStoreRequest();
+        User::factory()->create([
+            'name'  => 'Jane',
+            'email' => 'jane@example.com',
+        ]);
+
+        $request   = new UserStoreRequest();
         $validator = Validator::make($data, $request->rules());
 
         $this->assertFalse($validator->fails());
@@ -43,10 +48,16 @@ class UserStoreRequestTest extends FeatureTestCase
     {
         return [
             [[
-                'name'      => 'John',
-                'email'     => 'john@example.com',
-                'password'  => 'MyPassword',
-                'password_confirmation'  => 'MyPassword',
+                'name'                  => 'John',
+                'email'                 => 'john@example.com',
+                'password'              => 'MyPassword',
+                'password_confirmation' => 'MyPassword',
+            ]],
+            [[
+                'name'                  => 'John',
+                'email'                 => 'JOHN@example.com',
+                'password'              => 'MyPassword',
+                'password_confirmation' => 'MyPassword',
             ]],
         ];
     }
@@ -56,17 +67,12 @@ class UserStoreRequestTest extends FeatureTestCase
      */
     public function test_invalid_data(array $data) : void
     {
-        $user = new \App\Models\User(
-            [
-                'name'      => 'John',
-                'email'     => 'john@example.com',
-                'password'  => 'MyPassword',
-                'password_confirmation'  => 'MyPassword',
-            ]
-        );
-        $user->save();
-        
-        $request = new UserStoreRequest();
+        User::factory()->create([
+            'name'  => 'John',
+            'email' => 'john@example.com',
+        ]);
+
+        $request   = new UserStoreRequest();
         $validator = Validator::make($data, $request->rules());
 
         $this->assertTrue($validator->fails());
@@ -79,60 +85,59 @@ class UserStoreRequestTest extends FeatureTestCase
     {
         return [
             [[
-                'name'      => 'John', // unique
-                'email'     => 'john@example.com',
-                'password'  => 'MyPassword',
-                'password_confirmation'  => 'MyPassword',
+                'name'                  => 'John',
+                'email'                 => 'john@example.com', // unique
+                'password'              => 'MyPassword',
+                'password_confirmation' => 'MyPassword',
             ]],
             [[
-                'name'      => '', // required
-                'email'     => 'john@example.com',
-                'password'  => 'MyPassword',
-                'password_confirmation'  => 'MyPassword',
+                'name'                  => '', // required
+                'email'                 => 'john@example.com',
+                'password'              => 'MyPassword',
+                'password_confirmation' => 'MyPassword',
             ]],
             [[
-                'name'      => 'John',
-                'email'     => '', // required
-                'password'  => 'MyPassword',
-                'password_confirmation'  => 'MyPassword',
+                'name'                  => 'John',
+                'email'                 => '', // required
+                'password'              => 'MyPassword',
+                'password_confirmation' => 'MyPassword',
             ]],
             [[
-                'name'      => 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', // max:255
-                'email'     => 'john@example.com',
-                'password'  => 'MyPassword',
-                'password_confirmation'  => 'MyPassword',
+                'name'                  => 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', // max:255
+                'email'                 => 'john@example.com',
+                'password'              => 'MyPassword',
+                'password_confirmation' => 'MyPassword',
             ]],
             [[
-                'name'      => 'John',
-                'email'     => 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz@example.com', // max:255
-                'password'  => 'MyPassword',
-                'password_confirmation'  => 'MyPassword',
+                'name'                  => 'John',
+                'email'                 => 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz@example.com', // max:255
+                'password'              => 'MyPassword',
+                'password_confirmation' => 'MyPassword',
             ]],
             [[
-                'name'      => 'John',
-                'email'     => 'johnexample.com', // email
-                'password'  => 'MyPassword',
-                'password_confirmation'  => 'MyPassword',
+                'name'                  => 'John',
+                'email'                 => 'johnexample.com', // email
+                'password'              => 'MyPassword',
+                'password_confirmation' => 'MyPassword',
             ]],
             [[
-                'name'      => 'John',
-                'email'     => 'john@example.com',
-                'password'  => '', // required
-                'password_confirmation'  => '', // required
+                'name'                  => 'John',
+                'email'                 => 'john@example.com',
+                'password'              => '', // required
+                'password_confirmation' => '', // required
             ]],
             [[
-                'name'      => 'John',
-                'email'     => 'john@example.com',
-                'password'  => 'MyPassword',
-                'password_confirmation'  => 'anotherPassword', // confirmed
+                'name'                  => 'John',
+                'email'                 => 'john@example.com',
+                'password'              => 'MyPassword',
+                'password_confirmation' => 'anotherPassword', // confirmed
             ]],
             [[
-                'name'      => 'John',
-                'email'     => 'john@example.com',
-                'password'  => 'pwd', // min:8
-                'password_confirmation'  => 'pwd',
+                'name'                  => 'John',
+                'email'                 => 'john@example.com',
+                'password'              => 'pwd', // min:8
+                'password_confirmation' => 'pwd',
             ]],
         ];
     }
-
 }

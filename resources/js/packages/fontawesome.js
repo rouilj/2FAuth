@@ -1,4 +1,4 @@
-import Vue  from 'vue'
+import Vue from 'vue'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
@@ -37,7 +37,11 @@ import {
     faEye,
     faEyeSlash,
     faExternalLinkAlt,
-    faCamera
+    faCamera,
+    faFileDownload,
+    faSun,
+    faMoon,
+    faDesktop
 } from '@fortawesome/free-solid-svg-icons'
 
 import {
@@ -79,7 +83,11 @@ library.add(
     faEye,
     faEyeSlash,
     faExternalLinkAlt,
-    faCamera
+    faCamera,
+    faFileDownload,
+    faSun,
+    faMoon,
+    faDesktop
 );
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)

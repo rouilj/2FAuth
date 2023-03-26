@@ -11,8 +11,6 @@ class SkipIfAuthenticated
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @param  string|null  ...$guards
      * @return mixed
      */
@@ -22,11 +20,12 @@ class SkipIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                $user = Auth::guard($guard)->user()->name;
+                $user = Auth::guard($guard)->user();
 
                 return response()->json([
-                    'message' => 'authenticated',
-                    'name' => $user
+                    'message'     => 'authenticated',
+                    'name'        => $user->name,
+                    'preferences' => $user->preferences,
                 ], 200);
             }
         }

@@ -2,15 +2,12 @@
 
 namespace App\Services\Migrators;
 
-use App\Services\Migrators\Migrator;
-use Illuminate\Support\Collection;
-use App\Models\TwoFAccount;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Arr;
 use App\Exceptions\InvalidMigrationDataException;
-use Illuminate\Support\Facades\Storage;
-use App\Helpers\Helpers;
 use App\Facades\TwoFAccounts;
+use App\Models\TwoFAccount;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 
 class AegisMigrator extends Migrator
 {
@@ -33,12 +30,10 @@ class AegisMigrator extends Migrator
     //     }
     // }
 
-
     /**
      * Convert migration data to a TwoFAccounts collection.
      *
-     * @param  mixed  $migrationPayload
-     * @return \Illuminate\Support\Collection The converted accounts
+     * @return \Illuminate\Support\Collection<int|string, \App\Models\TwoFAccount> The converted accounts
      */
     public function migrate(mixed $migrationPayload) : Collection
     {
@@ -49,19 +44,18 @@ class AegisMigrator extends Migrator
             throw new InvalidMigrationDataException('Aegis');
         }
 
-        $twofaccounts = array();
+        $twofaccounts = [];
 
         foreach ($json['db']['entries'] as $key => $otp_parameters) {
-
-            $parameters = array();
-            $parameters['otp_type']     = $otp_parameters['type'] == 'steam' ? TwoFAccount::STEAM_TOTP : $otp_parameters['type'];
-            $parameters['service']      = $otp_parameters['issuer'];
-            $parameters['account']      = $otp_parameters['name'];
-            $parameters['secret']       = $this->padToValidBase32Secret($otp_parameters['info']['secret']);
-            $parameters['algorithm']    = $otp_parameters['info']['algo'];
-            $parameters['digits']       = $otp_parameters['info']['digits'];
-            $parameters['counter']      = $otp_parameters['info']['counter'] ?? null;
-            $parameters['period']       = $otp_parameters['info']['period'] ?? null;
+            $parameters              = [];
+            $parameters['otp_type']  = $otp_parameters['type'] == 'steam' ? TwoFAccount::STEAM_TOTP : $otp_parameters['type'];
+            $parameters['service']   = $otp_parameters['issuer'];
+            $parameters['account']   = $otp_parameters['name'];
+            $parameters['secret']    = $this->padToValidBase32Secret($otp_parameters['info']['secret']);
+            $parameters['algorithm'] = $otp_parameters['info']['algo'];
+            $parameters['digits']    = $otp_parameters['info']['digits'];
+            $parameters['counter']   = $otp_parameters['info']['counter'] ?? null;
+            $parameters['period']    = $otp_parameters['info']['period'] ?? null;
 
             try {
                 // Aegis supports 3 image extensions for icons
@@ -70,51 +64,45 @@ class AegisMigrator extends Migrator
                 if (Arr::has($otp_parameters, 'icon') && Arr::has($otp_parameters, 'icon_mime')) {
                     switch ($otp_parameters['icon_mime']) {
                         case 'image/svg+xml':
-                            $extension = 'svg';
+                            $parameters['iconExt'] = 'svg';
                             break;
 
                         case 'image/png':
-                            $extension = 'png';
+                            $parameters['iconExt'] = 'png';
                             break;
 
                         case 'image/jpeg':
-                            $extension = 'jpg';
+                            $parameters['iconExt'] = 'jpg';
                             break;
-                        
+
                         default:
                             throw new \Exception();
                     }
-
-                    $filename = Helpers::getUniqueFilename($extension);
-
-                    if (Storage::disk('icons')->put($filename, base64_decode($otp_parameters['icon']))) {
-                        $parameters['icon'] = $filename;
-                        Log::info(sprintf('Image %s successfully stored for import', $filename));
-                    }
+                    $parameters['iconData'] = base64_decode($otp_parameters['icon']);
                 }
-            }
-            catch (\Exception) {
+            } catch (\Exception) {
                 // we do nothing
             }
 
             try {
-               $twofaccounts[$key] = new TwoFAccount;
-               $twofaccounts[$key]->fillWithOtpParameters($parameters);
-            }
-            catch (\Exception $exception) {
-
+                $twofaccounts[$key] = new TwoFAccount;
+                $twofaccounts[$key]->fillWithOtpParameters($parameters);
+                if (Arr::has($parameters, 'iconExt') && Arr::has($parameters, 'iconData')) {
+                    $twofaccounts[$key]->setIcon($parameters['iconData'], $parameters['iconExt']);
+                }
+            } catch (\Exception $exception) {
                 Log::error(sprintf('Cannot instanciate a TwoFAccount object with OTP parameters from imported item #%s', $key));
-                Log::error($exception->getMessage());
+                Log::debug($exception->getMessage());
 
                 // The token failed to generate a valid account so we create a fake account to be returned.
-                $fakeAccount = new TwoFAccount();
-                $fakeAccount->id = TwoFAccount::FAKE_ID;
-                $fakeAccount->otp_type  = $otp_parameters['type'] ?? TwoFAccount::TOTP;
+                $fakeAccount           = new TwoFAccount();
+                $fakeAccount->id       = TwoFAccount::FAKE_ID;
+                $fakeAccount->otp_type = $otp_parameters['type'] ?? TwoFAccount::TOTP;
                 // Only basic fields are filled to limit the risk of another exception.
-                $fakeAccount->account   = $otp_parameters['name'] ?? __('twofaccounts.import.invalid_account');
-                $fakeAccount->service   = $otp_parameters['issuer'] ?? __('twofaccounts.import.invalid_service');
+                $fakeAccount->account = $otp_parameters['name'] ?? __('twofaccounts.import.invalid_account');
+                $fakeAccount->service = $otp_parameters['issuer'] ?? __('twofaccounts.import.invalid_service');
                 // The secret field is used to pass the error, not very clean but will do the job for now.
-                $fakeAccount->secret    = $exception->getMessage();
+                $fakeAccount->secret = $exception->getMessage();
 
                 $twofaccounts[$key] = $fakeAccount;
             }
