@@ -648,13 +648,8 @@ fieldset[disabled] .input {
   // box-shadow: inherit;
 }
 
-<<<<<<< HEAD
-
-.button:focus-visible, .button.is-focused,
-=======
 .button:focus-visible,
 .button.is-focused,
->>>>>>> dev
 .file[role=button]:focus-visible {
   border-color: transparent;
   outline-offset: 3px;
