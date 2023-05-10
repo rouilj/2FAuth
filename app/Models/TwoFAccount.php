@@ -216,6 +216,17 @@ class TwoFAccount extends Model implements Sortable
     }
 
     /**
+     * Scope a query to only include orphan (userless) accounts.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<User>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<User>
+     */
+    public function scopeOrphans($query)
+    {
+        return $query->where('user_id', null);
+    }
+
+    /**
      * Get legacy_uri attribute
      *
      * @param  string  $value
@@ -338,7 +349,7 @@ class TwoFAccount extends Model implements Sortable
      * @throws UnsupportedOtpTypeException The defined OTP type is not supported
      * @throws InvalidOtpParameterException One OTP parameter is invalid
      */
-    public function getOTP()
+    public function getOTP(?int $time = null)
     {
         Log::info(sprintf('OTP requested for TwoFAccount (%s)', $this->id ? 'id:' . $this->id : 'preview'));
 
@@ -366,7 +377,7 @@ class TwoFAccount extends Model implements Sortable
             } else {
                 $OtpDto               = new TotpDto();
                 $OtpDto->otp_type     = $this->otp_type;
-                $OtpDto->generated_at = time();
+                $OtpDto->generated_at = $time ?: time();
                 $OtpDto->password     = $this->otp_type === self::TOTP
                     ? $this->generator->at($OtpDto->generated_at)
                     : SteamTotp::getAuthCode(base64_encode(Base32::decodeUpper($this->secret)));
@@ -432,7 +443,7 @@ class TwoFAccount extends Model implements Sortable
         // First we instanciate the OTP generator
         try {
             $this->generator = Factory::loadFromProvisioningUri($isSteamTotp ? str_replace('otpauth://steam', 'otpauth://totp', $uri) : $uri);
-        } catch (\Assert\AssertionFailedException|\Assert\InvalidArgumentException|\Exception|\Throwable $ex) {
+        } catch (\Exception|\Throwable $ex) {
             throw ValidationException::withMessages([
                 'uri' => __('validation.custom.uri.regex', ['attribute' => 'uri']),
             ]);

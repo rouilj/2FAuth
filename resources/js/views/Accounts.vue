@@ -141,23 +141,35 @@
         	                            </div>
         	                        </div>
         	                    </transition>
-                                <div tabindex="0" class="tfa-cell tfa-content is-size-3 is-size-4-mobile" @click="showAccount(account)" @keyup.enter="showAccount(account)" role="button">  
+                                <div tabindex="0" class="tfa-cell tfa-content is-size-3 is-size-4-mobile" @click="showOrCopy(account)" @keyup.enter="showOrCopy(account)" role="button">  
                                     <div class="tfa-text has-ellipsis">
                                         <img :src="$root.appConfig.subdirectory + '/storage/icons/' + account.icon" v-if="account.icon && $root.userPreferences.showAccountsIcons" :alt="$t('twofaccounts.icon_for_account_x_at_service_y', {account: account.account, service: account.service})">
                                         {{ displayService(account.service) }}<font-awesome-icon class="has-text-danger is-size-5 ml-2" v-if="$root.appSettings.useEncryption && account.account === $t('errors.indecipherable')" :icon="['fas', 'exclamation-circle']" />
-                                        <span class="is-family-primary is-size-6 is-size-7-mobile has-text-grey ">{{ account.account }}</span>
+                                        <span class="has-ellipsis is-family-primary is-size-6 is-size-7-mobile has-text-grey ">{{ account.account }}</span>
                                     </div>
                                 </div>
+        	                    <transition name="popLater">
+                                    <div v-show="$root.userPreferences.getOtpOnRequest == false && !editMode" class="has-text-right">
+                                        <span v-if="account.otp != undefined" class="is-clickable has-nowrap has-text-grey is-size-5 ml-4" @click="copyOTP(account.otp.password)" @keyup.enter="copyOTP(account.otp.password)" :title="$t('commons.copy_to_clipboard')">
+                                            {{ displayPwd(account.otp.password) }}
+                                        </span>
+                                        <span v-else>
+                                            <!-- get hotp button -->
+                                            <button class="button tag" :class="$root.showDarkMode ? 'is-dark' : 'is-white'" @click="showAccount(account)" :title="$t('twofaccounts.import.import_this_account')">
+                                                {{ $t('commons.generate') }}
+                                            </button>
+                                        </span>
+                                        <dots v-if="account.otp_type.includes('totp')" :class="'condensed'" :ref="'dots_' + account.period"></dots>
+                                    </div>
+        	                    </transition>
         	                    <transition name="fadeInOut">
         	                        <div class="tfa-cell tfa-edit has-text-grey" v-if="editMode">
-                                        <!-- <div class="tags has-addons"> -->
-                                            <router-link :to="{ name: 'editAccount', params: { twofaccountId: account.id }}" class="tag is-rounded mr-1" :class="$root.showDarkMode ? 'is-dark' : 'is-white'">
-                                            {{ $t('commons.edit') }}
-                                            </router-link>
-                                            <router-link :to="{ name: 'showQRcode', params: { twofaccountId: account.id }}" class="tag is-rounded" :class="$root.showDarkMode ? 'is-dark' : 'is-white'" :title="$t('twofaccounts.show_qrcode')">
-                                                <font-awesome-icon :icon="['fas', 'qrcode']" />
-                                            </router-link>
-                                       <!-- </div> -->
+                                        <router-link :to="{ name: 'editAccount', params: { twofaccountId: account.id }}" class="tag is-rounded mr-1" :class="$root.showDarkMode ? 'is-dark' : 'is-white'">
+                                        {{ $t('commons.edit') }}
+                                        </router-link>
+                                        <router-link :to="{ name: 'showQRcode', params: { twofaccountId: account.id }}" class="tag is-rounded" :class="$root.showDarkMode ? 'is-dark' : 'is-white'" :title="$t('twofaccounts.show_qrcode')">
+                                            <font-awesome-icon :icon="['fas', 'qrcode']" />
+                                        </router-link>
         	                        </div>
         	                    </transition>
                                 <transition name="fadeInOut">
@@ -167,6 +179,7 @@
                                 </transition>
                             </div>
                         </div>
+                        <!-- <twofaccount v-for="account in filteredAccounts" :account="account" :key="account.id" :selectedAccounts="selectedAccounts" :isEditMode="editMode" v-on:selected="selectAccount" v-on:show="showAccount"></twofaccount> -->
                     </transition-group>
                 </draggable>
             <!-- </vue-pull-refresh> -->
@@ -186,9 +199,9 @@
                 </p>
                 <!-- move button -->
                 <p class="control" v-if="editMode">
-                    <button 
-                        :disabled='selectedAccounts.length == 0' class="button is-rounded" 
-                        :class="[{'is-outlined': $root.showDarkMode||selectedAccounts.length == 0}, selectedAccounts.length == 0 ? 'is-dark': 'is-link']" 
+                    <button
+                        :disabled='selectedAccounts.length == 0' class="button is-rounded"
+                        :class="[{'is-outlined': $root.showDarkMode||selectedAccounts.length == 0}, selectedAccounts.length == 0 ? 'is-dark': 'is-link']"
                         @click="showGroupSelector = true"
                         :title="$t('groups.move_selected_to_group')" >
                             {{ $t('commons.move') }}
@@ -196,25 +209,38 @@
                 </p>
                 <!-- delete button -->
                 <p class="control" v-if="editMode">
-                    <button 
-                        :disabled='selectedAccounts.length == 0' class="button is-rounded" 
-                        :class="[{'is-outlined': $root.showDarkMode||selectedAccounts.length == 0}, selectedAccounts.length == 0 ? 'is-dark': 'is-link']" 
+                    <button
+                        :disabled='selectedAccounts.length == 0' class="button is-rounded"
+                        :class="[{'is-outlined': $root.showDarkMode||selectedAccounts.length == 0}, selectedAccounts.length == 0 ? 'is-dark': 'is-link']"
                         @click="destroyAccounts" >
                             {{ $t('commons.delete') }}
                     </button>
                 </p>
                 <!-- export button -->
                 <p class="control" v-if="editMode">
-                    <button 
-                        :disabled='selectedAccounts.length == 0' class="button is-rounded" 
-                        :class="[{'is-outlined': $root.showDarkMode||selectedAccounts.length == 0}, selectedAccounts.length == 0 ? 'is-dark': 'is-link']" 
-                        @click="exportAccounts" 
+                    <button
+                        :disabled='selectedAccounts.length == 0' class="button is-rounded"
+                        :class="[{'is-outlined': $root.showDarkMode||selectedAccounts.length == 0}, selectedAccounts.length == 0 ? 'is-dark': 'is-link']"
+                        @click="exportAccounts"
                         :title="$t('twofaccounts.export_selected_to_json')" >
                             {{ $t('commons.export') }}
                     </button>
                 </p>
             </vue-footer>
         </div>
+        <span v-if="!this.$root.userPreferences.getOtpOnRequest">
+            <totp-looper 
+                v-for="period in periods" 
+                :key="period.period" 
+                :period="period.period" 
+                :generated_at="period.generated_at" 
+                :step_count="10"
+                v-on:loop-ended="updateTotps(period.period)"
+                v-on:loop-started="turnDotsOn(period.period, $event)"
+                v-on:stepped-up="turnDotsOn(period.period, $event)"
+                ref="loopers"
+            ></totp-looper>
+        </span>
     </div>
 </template>
 
@@ -223,9 +249,9 @@
 
     /**
      *  Accounts view
-     *  
+     *
      *  route: '/account' (alias: '/')
-     *  
+     *
      *  The main view of 2FAuth that list all existing account recorded in DB.
      *  Available feature in this view :
      *  - {{OTP}} generation
@@ -248,12 +274,15 @@
      *    ~ 'userPreferences.showAccountsIcons' toggle the icon visibility
      *    ~ 'userPreferences.displayMode' change the account appearance
      *
-     *  Input : 
+     *  Input :
      *  - The 'initialEditMode' props : allows to load the view directly in Edit mode
-     *  
+     *
      */
 
+    // import Twofaccount from '../components/Twofaccount'
     import Modal from '../components/Modal'
+    import TotpLooper from '../components/TotpLooper'
+    import Dots from '../components/Dots'
     import OtpDisplayer from '../components/OtpDisplayer'
     import draggable from 'vuedraggable'
     import Form from './../components/Form'
@@ -289,12 +318,12 @@
                     return this.accounts.filter(
                         item => {
                             if( parseInt(this.$root.userPreferences.activeGroup) > 0 ) {
-                                return ((item.service ? item.service.toLowerCase().includes(this.search.toLowerCase()) : false) || 
-                                    item.account.toLowerCase().includes(this.search.toLowerCase())) && 
+                                return ((item.service ? item.service.toLowerCase().includes(this.search.toLowerCase()) : false) ||
+                                    item.account.toLowerCase().includes(this.search.toLowerCase())) &&
                                     (item.group_id == parseInt(this.$root.userPreferences.activeGroup))
                             }
                             else {
-                                return ((item.service ? item.service.toLowerCase().includes(this.search.toLowerCase()) : false) || 
+                                return ((item.service ? item.service.toLowerCase().includes(this.search.toLowerCase()) : false) ||
                                     item.account.toLowerCase().includes(this.search.toLowerCase()))
                             }
                         }
@@ -324,7 +353,21 @@
                 else {
                     return this.$t('commons.all')
                 }
-            }
+            },
+
+            /**
+             * Returns an array of all totp periods present in the twofaccounts list
+             */
+            periods() {
+                return !this.$root.userPreferences.getOtpOnRequest ?
+                    this.accounts.filter(acc => acc.otp_type == 'totp').map(function(item) {
+                        return {period: item.period, generated_at: item.otp.generated_at}
+                        // return item.period
+                    }).filter((value, index, self) => index === self.findIndex((t) => (
+                        t.period === value.period
+                    ))).sort()
+                    : null
+            },
 
         },
 
@@ -335,7 +378,7 @@
             document.addEventListener('keydown', this.keyListener)
 
             // we don't have to fetch fresh data so we try to load them from localstorage to avoid display latency
-            if( !this.toRefresh && !this.$route.params.isFirstLoad ) {
+            if( this.$root.userPreferences.getOtpOnRequest && !this.toRefresh && !this.$route.params.isFirstLoad ) {
                 const accounts = this.$storage.get('accounts', null) // use null as fallback if localstorage is empty
                 if( accounts ) this.accounts = accounts
 
@@ -358,12 +401,84 @@
         },
 
         components: {
+            // Twofaccount,
             Modal,
             OtpDisplayer,
+            TotpLooper,
+            Dots,
             draggable,
         },
 
+     
         methods: {
+
+            /**
+             * 
+             */
+            showOrCopy(account) {
+                if (!this.$root.userPreferences.getOtpOnRequest && account.otp_type.includes('totp')) {
+                    this.copyOTP(account.otp.password)
+                }
+                else {
+                    this.showAccount(account)
+                }
+            },
+
+            /**
+             * 
+             */
+            copyOTP (otp) {
+                // see https://web.dev/async-clipboard/ for futur Clipboard API usage.
+                // The API should allow to copy the password on each trip without user interaction.
+
+                // For now too many browsers don't support the clipboard-write permission
+                // (see https://developer.mozilla.org/en-US/docs/Web/API/Permissions#browser_support)
+
+                const success = this.$clipboard(otp)
+
+                if (success == true) {
+                    if(this.$root.userPreferences.kickUserAfter == -1) {
+                        this.appLogout()
+                    }
+
+                    this.$notify({ type: 'is-success', text: this.$t('commons.copied_to_clipboard') })
+                }
+            },
+
+            /**
+             * 
+             */
+            turnDotsOn(period, stepIndex) {
+                this.$refs['dots_' + period].forEach((dots) => {
+                    dots.turnOn(stepIndex)
+                })
+            },
+
+            /**
+             * Fetch all accounts set with the given period to get fresh OTPs
+             */
+            async updateTotps(period) {
+                this.axios.get('api/v1/twofaccounts?withOtp=1&ids=' + this.accountIdsWithPeriod(period).join(',')).then(response => {
+                    response.data.forEach((account) => {
+                        const index = this.accounts.findIndex(acc => acc.id === account.id)
+                        this.accounts[index].otp = account.otp
+                        
+                        this.$refs.loopers.forEach((looper) => {
+                            if (looper.period == period) {
+                                looper.generatedAt = account.otp.generated_at
+                                looper.startLoop();
+                            }
+                        })
+                    })
+                })
+            },
+
+            /**
+             * Return an array of all accounts (ids) set with the given period
+             */
+            accountIdsWithPeriod(period) {
+                return this.accounts.filter(a => a.period == period).map(item => item.id)
+            },
 
             /**
              * Route user to the appropriate submitting view
@@ -386,8 +501,10 @@
             fetchAccounts(forceRefresh = false) {
                 let accounts = []
                 this.selectedAccounts = []
+                const queryParam = this.$root.userPreferences.getOtpOnRequest ? '' : '?withOtp=1'
+                // const queryParam = '?withOtp=1'
 
-                this.axios.get('api/v1/twofaccounts').then(response => {
+                this.axios.get('api/v1/twofaccounts' + queryParam).then(response => {
                     response.data.forEach((data) => {
                         accounts.push(data)
                     })
@@ -417,10 +534,10 @@
                     this.selectAccount(account.id)
                 }
                 else {
-                    this.$refs.OtpDisplayer.show(account.id)
+                    this.$root.showSpinner(this.$t('commons.generating_otp'));
+                    this.$refs.OtpDisplayer.show(account.id);
                 }
             },
-
 
             /**
              * Select an account while in edit mode
@@ -471,7 +588,7 @@
                             })
                             this.$notify({ type: 'is-success', text: this.$t('twofaccounts.accounts_deleted') })
                         })
-                        
+
                     // we fetch the accounts again to prevent the js collection being
                     // desynchronize from the backend php collection
                     this.fetchAccounts(true)
@@ -529,7 +646,7 @@
 
                     if ( !objectEquals(groups, this.groups) ) {
                         this.groups = groups
-                    } 
+                    }
 
                     this.$storage.set('groups', this.groups)
                 })
@@ -550,7 +667,7 @@
                         // everything's fine
                     })
                     .catch(error => {
-                        
+
                         this.$router.push({ name: 'genericError', params: { err: error.response } })
                     });
                 }
@@ -593,21 +710,21 @@
             },
 
             /**
-             * 
+             *
              */
             displayService(service) {
                 return service ? service : this.$t('twofaccounts.no_service')
             },
 
             /**
-             * 
+             *
              */
             clearSelected() {
                 this.selectedAccounts = []
             },
 
             /**
-             * 
+             *
              */
             selectAll() {
                 if(this.editMode) {
@@ -621,7 +738,7 @@
             },
 
             /**
-             * 
+             *
              */
             sortAsc() {
                 this.accounts.sort((a, b) => a.service > b.service ? 1 : -1)
@@ -629,7 +746,7 @@
             },
 
             /**
-             * 
+             *
              */
             sortDesc() {
                 this.accounts.sort((a, b) => a.service < b.service ? 1 : -1)
@@ -637,7 +754,7 @@
             },
 
             /**
-             * 
+             *
              */
             keyListener : function(e) {
                 if (e.key === "f" && (e.ctrlKey || e.metaKey)) {

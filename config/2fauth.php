@@ -9,9 +9,10 @@ return [
     |
     */
 
-    'version' => '4.0.0-beta.1',
+    'version' => '4.0.2',
     'repository' => 'https://github.com/Bubka/2FAuth',
     'latestReleaseUrl' => 'https://api.github.com/repos/Bubka/2FAuth/releases/latest',
+    'installDocUrl' => 'https://docs.2fauth.app/getting-started/installation/self-hosted-server/',
 
     /*
     |--------------------------------------------------------------------------
@@ -68,6 +69,7 @@ return [
         'checkForUpdate' => true,
         'lastRadarScan' => 0,
         'latestRelease' => false,
+        'disableRegistration' => false,
     ],
 
     /*
@@ -79,7 +81,7 @@ return [
     */
 
     'preferences' => [
-        'showTokenAsDot' => false,
+        'showOtpAsDot' => false,
         'closeOtpOnCopy' => false,
         'copyOtpOnDisplay' => false,
         'useBasicQrcodeReader' => false,
@@ -97,6 +99,7 @@ return [
         'formatPassword' => true,
         'formatPasswordBy' => 0.5,
         'lang' => 'browser',
+        'getOtpOnRequest' => true,
     ],
 
 ];

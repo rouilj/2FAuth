@@ -6,8 +6,8 @@
         <p class="is-size-4 has-ellipsis" :class="$root.showDarkMode ? 'has-text-grey-light' : 'has-text-grey'">{{ internal_service }}</p>
         <p class="is-size-6 has-ellipsis" :class="$root.showDarkMode ? 'has-text-grey' : 'has-text-grey-light'">{{ internal_account }}</p>
         <p>
-            <span role="log" ref="otp" tabindex="0" class="otp is-size-1 is-clickable px-3" :class="$root.showDarkMode ? 'has-text-white' : 'has-text-grey-dark'" @click="copyOTP(internal_password)" @keyup.enter="copyOTP(internal_password)" :title="$t('commons.copy_to_clipboard')">
-                {{ displayedOtp }}
+            <span role="log" ref="otp" tabindex="0" class="otp is-size-1 is-clickable px-3" :class="$root.showDarkMode ? 'has-text-white' : 'has-text-grey-dark'" @click="copyOTP(internal_password, true)" @keyup.enter="copyOTP(internal_password, true)" :title="$t('commons.copy_to_clipboard')">
+                {{ displayPwd(this.internal_password) }}
             </span>
         </p>
         <ul class="dots" v-show="isTimeBased(internal_otp_type)">
@@ -61,17 +61,17 @@
 
         computed: {
 
-            displayedOtp() {
-                let pwd = this.internal_password
-                if (this.$root.userPreferences.formatPassword && pwd.length > 0) {
-                    const x = Math.ceil(this.$root.userPreferences.formatPasswordBy < 1 ? pwd.length * this.$root.userPreferences.formatPasswordBy : this.$root.userPreferences.formatPasswordBy)
-                    const chunks = pwd.match(new RegExp(`.{1,${x}}`, 'g'));
-                    if (chunks) {
-                        pwd = chunks.join(' ')
-                    }
-                }
-                return this.$root.userPreferences.showOtpAsDot ? pwd.replace(/[0-9]/g, '●') : pwd
-            },
+            // displayedOtp() {
+            //     let pwd = this.internal_password
+            //     if (this.$root.userPreferences.formatPassword && pwd.length > 0) {
+            //         const x = Math.ceil(this.$root.userPreferences.formatPasswordBy < 1 ? pwd.length * this.$root.userPreferences.formatPasswordBy : this.$root.userPreferences.formatPasswordBy)
+            //         const chunks = pwd.match(new RegExp(`.{1,${x}}`, 'g'));
+            //         if (chunks) {
+            //             pwd = chunks.join(' ')
+            //         }
+            //     }
+            //     return this.$root.userPreferences.showOtpAsDot ? pwd.replace(/[0-9]/g, '●') : pwd
+            // },
         },
 
         mounted: function() {
@@ -83,8 +83,8 @@
 
         methods: {
 
-            copyOTP (otp) {
-                // see https://web.dev/async-clipboard/ for futur Clipboard API usage.
+            copyOTP (otp, permit_closing) {
+                // see https://web.dev/async-clipboard/ for future Clipboard API usage.
                 // The API should allow to copy the password on each trip without user interaction.
 
                 // For now too many browsers don't support the clipboard-write permission
@@ -97,7 +97,7 @@
                     if(this.$root.userPreferences.kickUserAfter == -1) {
                         this.appLogout()
                     }
-                    else if(this.$root.userPreferences.closeOtpOnCopy) {
+                    else if(this.$root.userPreferences.closeOtpOnCopy && (permit_closing || false) === true) {
                         this.$parent.isActive = false
                         this.clearOTP()
                     }
@@ -144,7 +144,7 @@
                     this.internal_account = data.account
                     this.internal_icon = data.icon
                     this.internal_otp_type = data.otp_type
-                    
+
                     if( this.isHMacBased(data.otp_type) && data.counter ) {
                         this.internal_counter = data.counter
                     }
@@ -165,13 +165,18 @@
                             await this.getHOTP()
                         }
                         else this.$router.push({ name: 'genericError', params: { err: this.$t('errors.not_a_supported_otp_type') } });
-    
+
                         this.$parent.isActive = true
                         this.focusOnOTP()
                     }
                     catch(error) {
                         this.clearOTP()
                     }
+                    finally {
+                        this.$root.hideSpinner();
+                    }
+                } else  {
+                    this.$root.hideSpinner();
                 }
             },
 
@@ -232,7 +237,7 @@
             },
 
             startTotpLoop: async function() {
-                
+
                 let otp = await this.getOtp()
 
                 this.internal_password = otp.password
@@ -258,7 +263,7 @@
                 //                              ● ● ● ● ●|● ◌ ◌ ◌ ◌ |
                 //                              | |      ||         |
                 //                              | |      |<-------->|--remainingTimeBeforeEndOfPeriod (for remainingTimeout)
-                //     durationBetweenTwoDots-->|-|<     ||         
+                //     durationBetweenTwoDots-->|-|<     ||
                 //     (for dotToDotInterval)   | |     >||<---durationFromFirstToNextDot (for firstDotToNextOneTimeout)
                 //                                        |
                 //                                        |
@@ -276,7 +281,7 @@
                 // We determine the position of the closest dot next to the generated_at timestamp
                 let relativePosition = (elapsedTimeInCurrentPeriod * 10) / period
                 let dotIndex = (Math.floor(relativePosition) +1)
-                
+
                 // We switch the dot on
                 this.lastActiveDot = dots.querySelector('li:nth-child(' + dotIndex + ')');
                 this.lastActiveDot.setAttribute('data-is-active', true);
